@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="id" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrasi Password - RuangServer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --primary-light: #EEF2FF;
+            --primary-hover: #4338CA;
+            --primary-dark: #3730A3;
+            --success: #10B981;
+            --success-light: #ECFDF5;
+            --danger: #EF4444;
+            --danger-light: #FEF2F2;
+            --warning: #F59E0B;
+            --warning-light: #FFFBEB;
+            --gray-50: #F9FAFB;
+            --gray-100: #F3F4F6;
+            --gray-200: #E5E7EB;
+            --gray-300: #D1D5DB;
+            --gray-400: #9CA3AF;
+            --gray-500: #6B7280;
+            --gray-600: #4B5563;
+            --gray-700: #374151;
+            --gray-800: #1F2937;
+            --gray-900: #111827;
+            --white: #FFFFFF;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+            --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+            --radius: 12px;
+            --radius-lg: 16px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            background: var(--gray-50);
+            color: var(--gray-800);
+        }
+
+        /* ===== LEFT PANEL ===== */
+        .register-left {
+            flex: 1;
+            background: linear-gradient(135deg, #059669 0%, #047857 50%, #064E3B 100%);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            padding: 60px; position: relative; overflow: hidden;
+        }
+        .register-left::before {
+            content: '';
+            position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: radial-gradient(circle at 30% 50%, rgba(255,255,255,0.08) 0%, transparent 50%),
+                        radial-gradient(circle at 70% 80%, rgba(255,255,255,0.05) 0%, transparent 40%);
+            animation: float 20s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(2%, -2%) rotate(1deg); }
+            50% { transform: translate(-1%, 3%) rotate(-1deg); }
+            75% { transform: translate(3%, 1%) rotate(0.5deg); }
+        }
+        .shape { position: absolute; border-radius: 50%; opacity: 0.1; animation: shapeFloat 15s ease-in-out infinite; }
+        .shape-1 { width: 300px; height: 300px; border: 2px solid #fff; top: 10%; left: -5%; }
+        .shape-2 { width: 200px; height: 200px; background: rgba(255,255,255,0.05); bottom: 15%; right: 5%; animation-delay: -5s; }
+        .shape-3 { width: 150px; height: 150px; border: 1px solid rgba(255,255,255,0.3); top: 60%; left: 15%; animation-delay: -10s; }
+        @keyframes shapeFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-30px); } }
+
+        .brand-content { position: relative; z-index: 2; text-align: center; color: #fff; max-width: 460px; }
+        .brand-icon {
+            width: 72px; height: 72px; background: rgba(255,255,255,0.15); backdrop-filter: blur(10px);
+            border-radius: 20px; display: flex; align-items: center; justify-content: center;
+            font-size: 34px; margin: 0 auto 28px; border: 1px solid rgba(255,255,255,0.2);
+        }
+        .brand-content h1 { font-size: 2rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 12px; }
+        .brand-content p { font-size: 1rem; opacity: 0.8; line-height: 1.7; font-weight: 300; }
+
+        .steps { margin-top: 40px; display: flex; flex-direction: column; gap: 16px; }
+        .step {
+            display: flex; align-items: center; gap: 14px; padding: 14px 20px;
+            background: rgba(255,255,255,0.08); backdrop-filter: blur(10px);
+            border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); transition: all 0.3s;
+        }
+        .step:hover { background: rgba(255,255,255,0.14); transform: translateX(6px); }
+        .step-num {
+            width: 36px; height: 36px; background: rgba(255,255,255,0.15); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 14px; font-weight: 700; flex-shrink: 0;
+        }
+        .step-num.done { background: rgba(16,185,129,0.4); }
+        .step-text { font-size: 0.875rem; font-weight: 500; opacity: 0.95; }
+
+        /* ===== RIGHT PANEL ===== */
+        .register-right {
+            flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;
+            padding: 60px; max-width: 560px; min-width: 440px;
+        }
+        .register-form-wrapper { width: 100%; max-width: 420px; }
+        .register-header { margin-bottom: 28px; }
+        .register-header .badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 6px 14px; background: var(--success-light); color: var(--success);
+            border-radius: 20px; font-size: 0.8rem; font-weight: 600; margin-bottom: 20px;
+        }
+        .register-header h2 { font-size: 1.75rem; font-weight: 800; color: var(--gray-900); margin-bottom: 8px; }
+        .register-header p { font-size: 0.925rem; color: var(--gray-500); line-height: 1.5; }
+
+        /* User Info Card */
+        .user-info-card {
+            display: none; padding: 16px 20px; border-radius: var(--radius);
+            background: var(--success-light); border: 1px solid rgba(16,185,129,0.2);
+            margin-bottom: 20px; animation: slideDown 0.3s ease;
+        }
+        .user-info-card.show { display: block; }
+        .user-info-card .user-name { font-size: 1rem; font-weight: 700; color: #065F46; }
+        .user-info-card .user-detail { font-size: 0.85rem; color: #047857; margin-top: 4px; }
+
+        /* Form */
+        .form-group { margin-bottom: 20px; }
+        .form-label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--gray-700); margin-bottom: 8px; }
+        .input-wrapper { position: relative; }
+        .input-wrapper .input-icon {
+            position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+            font-size: 18px; color: var(--gray-400); pointer-events: none; transition: color 0.2s;
+        }
+        .form-input {
+            width: 100%; padding: 13px 14px 13px 44px;
+            border: 2px solid var(--gray-200); border-radius: var(--radius);
+            font-size: 0.925rem; font-family: 'Inter', sans-serif;
+            color: var(--gray-900); background: var(--white);
+            transition: all 0.3s ease; outline: none;
+        }
+        .form-input::placeholder { color: var(--gray-400); }
+        .form-input:focus { border-color: #059669; box-shadow: 0 0 0 4px rgba(5,150,105,0.1); }
+        .form-input:focus ~ .input-icon { color: #059669; }
+        .form-input:disabled { background: var(--gray-100); color: var(--gray-500); cursor: not-allowed; }
+        .form-input.error { border-color: var(--danger); box-shadow: 0 0 0 4px rgba(239,68,68,0.08); }
+        .form-input.success { border-color: var(--success); }
+
+        .input-wrapper .toggle-password {
+            position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+            background: none; border: none; cursor: pointer; font-size: 18px;
+            color: var(--gray-400); padding: 4px; transition: color 0.2s;
+        }
+        .input-wrapper .toggle-password:hover { color: var(--gray-600); }
+
+        .input-error-text { font-size: 0.78rem; color: var(--danger); margin-top: 6px; display: none; }
+        .input-error-text.show { display: block; }
+        .input-hint { font-size: 0.78rem; color: var(--gray-400); margin-top: 6px; }
+
+        /* Password strength */
+        .password-strength { margin-top: 8px; }
+        .strength-bar { height: 4px; background: var(--gray-200); border-radius: 2px; overflow: hidden; }
+        .strength-bar-fill { height: 100%; width: 0; border-radius: 2px; transition: all 0.3s; }
+        .strength-text { font-size: 0.75rem; margin-top: 4px; color: var(--gray-400); }
+
+        /* Alert */
+        .alert {
+            padding: 12px 16px; border-radius: var(--radius); font-size: 0.85rem; font-weight: 500;
+            margin-bottom: 20px; display: none; align-items: center; gap: 10px; animation: slideDown 0.3s ease;
+        }
+        .alert.show { display: flex; }
+        .alert-error { background: var(--danger-light); color: var(--danger); border: 1px solid #FECACA; }
+        .alert-success { background: var(--success-light); color: var(--success); border: 1px solid #A7F3D0; }
+        .alert-warning { background: var(--warning-light); color: #92400E; border: 1px solid #FDE68A; }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Buttons */
+        .btn-register {
+            width: 100%; padding: 14px; background: #059669; color: #fff; border: none;
+            border-radius: var(--radius); font-size: 0.95rem; font-weight: 700;
+            font-family: 'Inter', sans-serif; cursor: pointer; transition: all 0.3s;
+            position: relative; overflow: hidden;
+        }
+        .btn-register:hover { background: #047857; transform: translateY(-2px); box-shadow: 0 8px 20px rgba(5,150,105,0.35); }
+        .btn-register:active { transform: translateY(0); }
+        .btn-register:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .btn-register.loading { pointer-events: none; opacity: 0.85; }
+        .btn-register .btn-text { transition: opacity 0.2s; }
+        .btn-register .btn-spinner { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+        .btn-register.loading .btn-text { opacity: 0; }
+        .btn-register.loading .btn-spinner { display: block; }
+
+        .spinner { width: 22px; height: 22px; border: 3px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .register-footer { text-align: center; margin-top: 24px; font-size: 0.85rem; color: var(--gray-500); }
+        .register-footer a { color: #059669; text-decoration: none; font-weight: 600; }
+        .register-footer a:hover { color: #047857; }
+
+        /* Password checklist */
+        .password-checklist { margin-top: 12px; }
+        .check-item { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--gray-400); margin-bottom: 4px; transition: color 0.2s; }
+        .check-item.valid { color: var(--success); }
+        .check-item .check-icon { font-size: 14px; }
+
+        /* Responsive */
+        @media (max-width: 960px) {
+            body { flex-direction: column; }
+            .register-left { min-height: 280px; padding: 40px 30px; }
+            .steps { display: none; }
+            .register-right { min-width: auto; max-width: none; padding: 40px 30px; }
+        }
+        @media (max-width: 480px) {
+            .register-left { padding: 30px 20px; min-height: 220px; }
+            .register-right { padding: 30px 20px; }
+            .register-header h2 { font-size: 1.4rem; }
+        }
+
+        .register-right { animation: fadeInRight 0.6s ease-out; }
+        @keyframes fadeInRight { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
+    </style>
+</head>
+<body>
+
+    <!-- LEFT PANEL -->
+    <div class="register-left">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+        <div class="brand-content">
+            <div class="brand-icon">&#128100;</div>
+            <h1>Registrasi<br>Password User</h1>
+            <p>Buat password untuk mengakses Dashboard User menggunakan NIM yang telah didaftarkan oleh Admin</p>
+            <div class="steps">
+                <div class="step" id="step1">
+                    <div class="step-num" id="stepNum1">1</div>
+                    <div class="step-text">Admin mendaftarkan NIM Anda</div>
+                </div>
+                <div class="step" id="step2">
+                    <div class="step-num" id="stepNum2">2</div>
+                    <div class="step-text">Masukkan NIM untuk verifikasi</div>
+                </div>
+                <div class="step" id="step3">
+                    <div class="step-num" id="stepNum3">3</div>
+                    <div class="step-text">Buat password untuk akun Anda</div>
+                </div>
+                <div class="step" id="step4">
+                    <div class="step-num" id="stepNum4">4</div>
+                    <div class="step-text">Login dan akses Dashboard User</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="register-right">
+        <div class="register-form-wrapper">
+            <div class="register-header">
+                <div class="badge">&#128100; Registrasi User</div>
+                <h2>Buat Password</h2>
+                <p>Masukkan NIM yang telah didaftarkan admin, kemudian buat password untuk mengakses dashboard user</p>
+            </div>
+
+            <!-- Alerts -->
+            <div class="alert alert-error" id="alertError">
+                <span>&#9888;&#65039;</span>
+                <span id="alertErrorText"></span>
+            </div>
+            <div class="alert alert-success" id="alertSuccess">
+                <span>&#9989;</span>
+                <span id="alertSuccessText"></span>
+            </div>
+            <div class="alert alert-warning" id="alertWarning">
+                <span>&#9888;&#65039;</span>
+                <span id="alertWarningText"></span>
+            </div>
+
+            <!-- User Info Card (shown after NIM verified) -->
+            <div class="user-info-card" id="userInfoCard">
+                <div class="user-name" id="userInfoName"></div>
+                <div class="user-detail" id="userInfoDetail"></div>
+            </div>
+
+            <form id="registerForm" onsubmit="handleRegister(event)">
+                <!-- NIM -->
+                <div class="form-group">
+                    <label class="form-label" for="nim">NIM</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="nim" name="nim" class="form-input"
+                               placeholder="Masukkan NIM Anda" required
+                               th:value="${nim != null ? nim : ''}">
+                        <span class="input-icon">&#127891;</span>
+                    </div>
+                    <div class="input-error-text" id="nimError"></div>
+                    <div class="input-hint">NIM yang telah didaftarkan oleh admin</div>
+                </div>
+
+                <!-- Verify NIM Button -->
+                <div class="form-group" id="verifyGroup">
+                    <button type="button" class="btn-register" id="btnVerify" onclick="verifyNim()" style="background: var(--primary);">
+                        <span class="btn-text">&#128270; Verifikasi NIM</span>
+                        <span class="btn-spinner"><div class="spinner"></div></span>
+                    </button>
+                </div>
+
+                <!-- Password fields (hidden until NIM verified) -->
+                <div id="passwordSection" style="display: none;">
+                    <!-- Password -->
+                    <div class="form-group">
+                        <label class="form-label" for="password">Password Baru</label>
+                        <div class="input-wrapper">
+                            <input type="password" id="password" name="password" class="form-input"
+                                   placeholder="Buat password baru" oninput="checkPasswordStrength()">
+                            <span class="input-icon">&#128273;</span>
+                            <button type="button" class="toggle-password" onclick="togglePassword('password')">
+                                <span id="eyeIcon1">&#128065;&#65039;</span>
+                            </button>
+                        </div>
+                        <div class="input-error-text" id="passwordError"></div>
+                        <div class="password-strength">
+                            <div class="strength-bar"><div class="strength-bar-fill" id="strengthBar"></div></div>
+                            <div class="strength-text" id="strengthText"></div>
+                        </div>
+                        <div class="password-checklist">
+                            <div class="check-item" id="checkLength"><span class="check-icon">&#9675;</span> Minimal 6 karakter</div>
+                            <div class="check-item" id="checkUpper"><span class="check-icon">&#9675;</span> Mengandung huruf besar</div>
+                            <div class="check-item" id="checkNumber"><span class="check-icon">&#9675;</span> Mengandung angka</div>
+                        </div>
+                    </div>
+
+                    <!-- Confirm Password -->
+                    <div class="form-group">
+                        <label class="form-label" for="confirmPassword">Konfirmasi Password</label>
+                        <div class="input-wrapper">
+                            <input type="password" id="confirmPassword" name="confirmPassword" class="form-input"
+                                   placeholder="Ulangi password baru" oninput="checkMatch()">
+                            <span class="input-icon">&#128274;</span>
+                            <button type="button" class="toggle-password" onclick="togglePassword('confirmPassword')">
+                                <span id="eyeIcon2">&#128065;&#65039;</span>
+                            </button>
+                        </div>
+                        <div class="input-error-text" id="confirmError"></div>
+                    </div>
+
+                    <!-- Register Button -->
+                    <button type="submit" class="btn-register" id="btnRegister">
+                        <span class="btn-text">&#128274; Buat Password &amp; Daftar</span>
+                        <span class="btn-spinner"><div class="spinner"></div></span>
+                    </button>
+                </div>
+            </form>
+
+            <div class="register-footer">
+                Sudah punya password? <a href="/login">Kembali ke Login</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let nimVerified = false;
+        let verifiedNim = '';
+
+        // Auto-verify if NIM is provided via URL param
+        window.addEventListener('load', () => {
+            const nimInput = document.getElementById('nim');
+            if (nimInput.value.trim()) {
+                verifyNim();
+            } else {
+                nimInput.focus();
+            }
+        });
+
+        // Verify NIM exists in anggota table
+        function verifyNim() {
+            const nim = document.getElementById('nim').value.trim();
+            if (!nim) {
+                showError('nimError', 'NIM wajib diisi');
+                return;
+            }
+
+            const btn = document.getElementById('btnVerify');
+            btn.classList.add('loading');
+            hideAlerts();
+
+            fetch('/api/check-nim', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'nim=' + encodeURIComponent(nim)
+            })
+            .then(r => r.json())
+            .then(data => {
+                btn.classList.remove('loading');
+                if (data.exists) {
+                    if (data.alreadyRegistered) {
+                        // Already has password
+                        showAlert('alertWarning', 'alertWarningText', data.message + ' Silakan login.');
+                        setTimeout(() => { window.location.href = '/login'; }, 2000);
+                    } else {
+                        // NIM found, no password yet
+                        nimVerified = true;
+                        verifiedNim = nim;
+                        document.getElementById('nim').disabled = true;
+                        document.getElementById('verifyGroup').style.display = 'none';
+                        document.getElementById('passwordSection').style.display = 'block';
+
+                        // Show user info card
+                        const card = document.getElementById('userInfoCard');
+                        document.getElementById('userInfoName').textContent = data.nama || '';
+                        document.getElementById('userInfoDetail').textContent = 'NIM: ' + nim + (data.kelas ? ' | Kelas: ' + data.kelas : '');
+                        card.classList.add('show');
+
+                        showAlert('alertSuccess', 'alertSuccessText', 'NIM ditemukan! Silakan buat password Anda.');
+
+                        // Mark steps
+                        markStep(1);
+                        markStep(2);
+
+                        document.getElementById('password').focus();
+                    }
+                } else {
+                    showAlert('alertError', 'alertErrorText', data.message);
+                }
+            })
+            .catch(err => {
+                btn.classList.remove('loading');
+                showAlert('alertError', 'alertErrorText', 'Gagal terhubung ke server');
+            });
+        }
+
+        // Check password strength
+        function checkPasswordStrength() {
+            const pw = document.getElementById('password').value;
+            const bar = document.getElementById('strengthBar');
+            const text = document.getElementById('strengthText');
+            let score = 0;
+
+            // Length check
+            const checkLength = document.getElementById('checkLength');
+            if (pw.length >= 6) { score++; checkLength.classList.add('valid'); checkLength.querySelector('.check-icon').innerHTML = '&#9989;'; }
+            else { checkLength.classList.remove('valid'); checkLength.querySelector('.check-icon').innerHTML = '&#9675;'; }
+
+            // Uppercase
+            const checkUpper = document.getElementById('checkUpper');
+            if (/[A-Z]/.test(pw)) { score++; checkUpper.classList.add('valid'); checkUpper.querySelector('.check-icon').innerHTML = '&#9989;'; }
+            else { checkUpper.classList.remove('valid'); checkUpper.querySelector('.check-icon').innerHTML = '&#9675;'; }
+
+            // Number
+            const checkNumber = document.getElementById('checkNumber');
+            if (/[0-9]/.test(pw)) { score++; checkNumber.classList.add('valid'); checkNumber.querySelector('.check-icon').innerHTML = '&#9989;'; }
+            else { checkNumber.classList.remove('valid'); checkNumber.querySelector('.check-icon').innerHTML = '&#9675;'; }
+
+            // Update bar
+            const colors = ['#EF4444', '#F59E0B', '#10B981'];
+            const labels = ['Lemah', 'Sedang', 'Kuat'];
+            const widths = ['33%', '66%', '100%'];
+
+            if (pw.length === 0) {
+                bar.style.width = '0';
+                text.textContent = '';
+            } else {
+                const idx = Math.min(score - 1, 2);
+                bar.style.width = widths[Math.max(idx, 0)];
+                bar.style.background = colors[Math.max(idx, 0)];
+                text.textContent = labels[Math.max(idx, 0)];
+                text.style.color = colors[Math.max(idx, 0)];
+            }
+
+            checkMatch();
+        }
+
+        // Check password match
+        function checkMatch() {
+            const pw = document.getElementById('password').value;
+            const cpw = document.getElementById('confirmPassword').value;
+            const err = document.getElementById('confirmError');
+
+            if (cpw.length > 0 && pw !== cpw) {
+                showError('confirmError', 'Password tidak cocok');
+                document.getElementById('confirmPassword').classList.add('error');
+            } else if (cpw.length > 0 && pw === cpw) {
+                hideError('confirmError');
+                document.getElementById('confirmPassword').classList.remove('error');
+                document.getElementById('confirmPassword').classList.add('success');
+            } else {
+                hideError('confirmError');
+                document.getElementById('confirmPassword').classList.remove('error', 'success');
+            }
+        }
+
+        // Toggle password visibility
+        function togglePassword(fieldId) {
+            const input = document.getElementById(fieldId);
+            const iconId = fieldId === 'password' ? 'eyeIcon1' : 'eyeIcon2';
+            const icon = document.getElementById(iconId);
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.innerHTML = '&#128584;';
+            } else {
+                input.type = 'password';
+                icon.innerHTML = '&#128065;&#65039;';
+            }
+        }
+
+        // Handle registration
+        function handleRegister(e) {
+            e.preventDefault();
+            if (!nimVerified) {
+                showAlert('alertError', 'alertErrorText', 'Silakan verifikasi NIM terlebih dahulu');
+                return;
+            }
+
+            const pw = document.getElementById('password').value;
+            const cpw = document.getElementById('confirmPassword').value;
+            hideAlerts();
+
+            if (pw.length < 6) {
+                showError('passwordError', 'Password minimal 6 karakter');
+                return;
+            }
+            if (pw !== cpw) {
+                showError('confirmError', 'Password tidak cocok');
+                return;
+            }
+
+            const btn = document.getElementById('btnRegister');
+            btn.classList.add('loading');
+
+            const formData = new URLSearchParams();
+            formData.append('nim', verifiedNim);
+            formData.append('password', pw);
+            formData.append('confirmPassword', cpw);
+
+            fetch('/api/user-register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: formData
+            })
+            .then(r => r.json())
+            .then(data => {
+                btn.classList.remove('loading');
+                if (data.success) {
+                    showAlert('alertSuccess', 'alertSuccessText', data.message);
+                    markStep(3);
+                    // Disable form
+                    document.getElementById('password').disabled = true;
+                    document.getElementById('confirmPassword').disabled = true;
+                    btn.disabled = true;
+                    btn.querySelector('.btn-text').textContent = '✅ Registrasi Berhasil!';
+
+                    setTimeout(() => {
+                        markStep(4);
+                        window.location.href = '/login';
+                    }, 2000);
+                } else {
+                    showAlert('alertError', 'alertErrorText', data.message);
+                }
+            })
+            .catch(err => {
+                btn.classList.remove('loading');
+                showAlert('alertError', 'alertErrorText', 'Gagal terhubung ke server');
+            });
+        }
+
+        // Helper functions
+        function showAlert(alertId, textId, message) {
+            hideAlerts();
+            document.getElementById(textId).textContent = message;
+            document.getElementById(alertId).classList.add('show');
+        }
+
+        function hideAlerts() {
+            document.getElementById('alertError').classList.remove('show');
+            document.getElementById('alertSuccess').classList.remove('show');
+            document.getElementById('alertWarning').classList.remove('show');
+        }
+
+        function showError(id, msg) {
+            const el = document.getElementById(id);
+            el.textContent = msg;
+            el.classList.add('show');
+        }
+
+        function hideError(id) {
+            document.getElementById(id).classList.remove('show');
+        }
+
+        function markStep(num) {
+            const el = document.getElementById('stepNum' + num);
+            if (el) {
+                el.classList.add('done');
+                el.innerHTML = '&#10003;';
+            }
+        }
+
+        // Clear errors on focus
+        document.querySelectorAll('.form-input').forEach(input => {
+            input.addEventListener('focus', function() {
+                this.classList.remove('error');
+                const err = document.getElementById(this.id + 'Error');
+                if (err) err.classList.remove('show');
+            });
+        });
+
+        // Enter key on NIM field triggers verify
+        document.getElementById('nim').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !nimVerified) {
+                e.preventDefault();
+                verifyNim();
+            }
+        });
+    </script>
+</body>
+</html>

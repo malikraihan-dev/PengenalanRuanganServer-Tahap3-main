@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background-color: #f8f8f8; color: #1a1a1a; min-height: 100vh; }
+
+        .sidebar { position: fixed; left: 0; top: 0; width: 260px; height: 100vh; background: #0a0a0a; color: #ffffff; z-index: 100; display: flex; flex-direction: column; }
+        .sidebar-header { padding: 28px 24px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+        .sidebar-header .logo { display: flex; align-items: center; gap: 12px; }
+        .sidebar-header .logo-icon { width: 40px; height: 40px; background: #ffffff; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        .sidebar-header .logo-text { font-size: 16px; font-weight: 700; }
+        .sidebar-header .logo-sub { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 2px; }
+        .sidebar-nav { padding: 16px 12px; flex: 1; }
+        .nav-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: rgba(255,255,255,0.35); padding: 8px 12px; margin-top: 8px; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-radius: 8px; color: rgba(255,255,255,0.6); text-decoration: none; font-size: 14px; font-weight: 500; transition: all 0.2s; cursor: pointer; margin-bottom: 2px; }
+        .nav-item:hover { background: rgba(255,255,255,0.08); color: #ffffff; }
+        .nav-item.active { background: #ffffff; color: #0a0a0a; }
+        .nav-item .nav-icon { width: 20px; text-align: center; font-size: 16px; }
+        .sidebar-footer { padding: 20px 24px; border-top: 1px solid rgba(255,255,255,0.08); }
+        .sidebar-footer .version { font-size: 11px; color: rgba(255,255,255,0.3); }
+
+        .main-content { margin-left: 260px; min-height: 100vh; display: flex; flex-direction: column; }
+        .topbar { background: #ffffff; border-bottom: 1px solid #e5e5e5; padding: 0 36px; height: 64px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+        .topbar h1 { font-size: 20px; font-weight: 700; color: #0a0a0a; }
+        .topbar .breadcrumb { font-size: 13px; color: #999; margin-left: 12px; }
+
+        /* Chat Container */
+        .chat-container { flex: 1; display: flex; flex-direction: column; max-width: 900px; margin: 0 auto; width: 100%; padding: 28px 36px; }
+
+        .chat-header-card { background: #0a0a0a; color: #fff; border-radius: 16px; padding: 24px 28px; margin-bottom: 20px; display: flex; align-items: center; gap: 16px; }
+        .chat-bot-avatar { width: 56px; height: 56px; background: #fff; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 28px; }
+        .chat-bot-info h2 { font-size: 18px; font-weight: 700; }
+        .chat-bot-info p { font-size: 13px; color: rgba(255,255,255,0.6); margin-top: 4px; }
+        .chat-online { display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 12px; color: #4ade80; }
+        .chat-online-dot { width: 8px; height: 8px; background: #4ade80; border-radius: 50%; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+        /* Quick Actions */
+        .quick-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+        .quick-btn { padding: 8px 16px; border-radius: 20px; border: 1px solid #e5e5e5; background: #fff; color: #333; font-size: 12px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.2s; }
+        .quick-btn:hover { background: #0a0a0a; color: #fff; border-color: #0a0a0a; }
+
+        /* Messages Area */
+        .chat-messages { flex: 1; background: #ffffff; border: 1px solid #e5e5e5; border-radius: 16px; padding: 24px; overflow-y: auto; min-height: 400px; max-height: calc(100vh - 380px); display: flex; flex-direction: column; gap: 16px; margin-bottom: 16px; }
+
+        .message { display: flex; gap: 10px; max-width: 80%; animation: fadeInUp 0.3s ease; }
+        .message.user { align-self: flex-end; flex-direction: row-reverse; }
+        .message.bot { align-self: flex-start; }
+
+        .msg-avatar { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+        .message.bot .msg-avatar { background: #0a0a0a; color: #fff; }
+        .message.user .msg-avatar { background: #f0f0f0; color: #333; }
+
+        .msg-body { display: flex; flex-direction: column; gap: 4px; }
+        .msg-bubble { padding: 12px 16px; border-radius: 14px; font-size: 14px; line-height: 1.6; word-wrap: break-word; white-space: pre-wrap; }
+        .message.bot .msg-bubble { background: #f5f5f5; color: #1a1a1a; border-bottom-left-radius: 4px; }
+        .message.user .msg-bubble { background: #0a0a0a; color: #ffffff; border-bottom-right-radius: 4px; }
+        .msg-time { font-size: 10px; color: #bbb; padding: 0 4px; }
+        .message.user .msg-time { text-align: right; }
+
+        .typing-indicator { display: flex; gap: 4px; padding: 12px 16px; align-self: flex-start; }
+        .typing-dot { width: 8px; height: 8px; background: #ccc; border-radius: 50%; animation: typingBounce 1.4s infinite ease-in-out; }
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes typingBounce { 0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; } 40% { transform: scale(1); opacity: 1; } }
+
+        /* Welcome Message */
+        .welcome-msg { text-align: center; padding: 40px 20px; color: #aaa; }
+        .welcome-msg .icon { font-size: 48px; margin-bottom: 12px; }
+        .welcome-msg h3 { font-size: 16px; font-weight: 600; color: #666; margin-bottom: 8px; }
+        .welcome-msg p { font-size: 13px; }
+
+        /* Input Area */
+        .chat-input-area { display: flex; gap: 10px; align-items: flex-end; }
+        .chat-input-wrapper { flex: 1; display: flex; align-items: flex-end; background: #fff; border: 2px solid #e5e5e5; border-radius: 14px; padding: 4px; transition: border-color 0.2s; }
+        .chat-input-wrapper:focus-within { border-color: #0a0a0a; }
+        .chat-input { flex: 1; border: none; outline: none; padding: 12px 16px; font-size: 14px; font-family: 'Inter', sans-serif; resize: none; max-height: 100px; min-height: 44px; line-height: 1.4; background: transparent; }
+        .chat-input::placeholder { color: #bbb; }
+        .chat-send-btn { width: 48px; height: 48px; border-radius: 12px; border: none; background: #0a0a0a; color: #fff; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; flex-shrink: 0; }
+        .chat-send-btn:hover { background: #333; }
+        .chat-send-btn:disabled { background: #ccc; cursor: not-allowed; }
+
+        .chat-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+        .chat-clear-btn { padding: 6px 14px; border-radius: 8px; border: 1px solid #e5e5e5; background: #fff; color: #888; font-size: 11px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.2s; }
+        .chat-clear-btn:hover { background: #f0f0f0; color: #333; }
+        .chat-session-id { font-size: 10px; color: #ccc; }
+
+        .toast { position: fixed; top: 20px; right: 20px; padding: 14px 20px; border-radius: 10px; font-size: 13px; font-weight: 600; z-index: 2000; box-shadow: 0 8px 30px rgba(0,0,0,0.15); }
+        .toast.success { background: #0a0a0a; color: #fff; }
+        .toast.error { background: #ef4444; color: #fff; }
+
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .main-content { margin-left: 0; }
+            .chat-container { padding: 16px; }
+            .topbar { padding: 0 16px; }
+            .message { max-width: 90%; }
+            .quick-actions { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon">&#128421;</div>
+                <div>
+                    <div class="logo-text">RuangServer</div>
+                    <div class="logo-sub">Monitoring System</div>
+                </div>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-label">Menu Utama</div>
+            <a class="nav-item" href="/"><span class="nav-icon">&#9632;</span><span>Dashboard</span></a>
+            <div class="nav-label" style="margin-top:24px;">Server Monitoring</div>
+            <a class="nav-item" href="/server-monitor"><span class="nav-icon">&#128421;</span><span>Monitor Server</span></a>
+            <a class="nav-item" href="/server-monitor-register"><span class="nav-icon">&#128100;</span><span>Registrasi Server</span></a>
+            <a class="nav-item" href="/user-management"><span class="nav-icon">&#128101;</span><span>User Panel</span></a>
+            <div class="nav-label" style="margin-top:24px;">Fitur Lainnya</div>
+            <a class="nav-item" href="/property"><span class="nav-icon">&#127968;</span><span>Real Estate</span></a>
+            <a class="nav-item" href="/project"><span class="nav-icon">&#128203;</span><span>Project Management</span></a>
+            <a class="nav-item active" href="/chatbot"><span class="nav-icon">&#129302;</span><span>Chatbot</span></a>
+            <a class="nav-item" href="/music"><span class="nav-icon">&#127925;</span><span>Music Streaming</span></a>
+            <a class="nav-item" href="/expense"><span class="nav-icon">&#128176;</span><span>Expense Report</span></a>
+            <a class="nav-item" href="/language"><span class="nav-icon">&#127760;</span><span>Language Learning</span></a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="version">RuangServer v3.0</div>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+        <header class="topbar">
+            <div style="display:flex;align-items:center;">
+                <h1>Chatbot Assistant</h1>
+                <span class="breadcrumb">/ Asisten Virtual</span>
+            </div>
+        </header>
+
+        <div class="chat-container">
+            <!-- Bot Header Card -->
+            <div class="chat-header-card">
+                <div class="chat-bot-avatar">&#129302;</div>
+                <div class="chat-bot-info">
+                    <h2>AbsensiBot</h2>
+                    <p>Asisten virtual untuk membantu Anda menggunakan sistem RuangServer</p>
+                    <div class="chat-online">
+                        <span class="chat-online-dot"></span>
+                        <span>Online &mdash; Siap membantu</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <button class="quick-btn" onclick="sendQuick('Halo')">&#128075; Halo</button>
+                <button class="quick-btn" onclick="sendQuick('Bantuan')">&#10067; Bantuan</button>
+                <button class="quick-btn" onclick="sendQuick('Info absensi')">&#128203; Info Absensi</button>
+                <button class="quick-btn" onclick="sendQuick('Info ruangan')">&#127970; Ruangan</button>
+                <button class="quick-btn" onclick="sendQuick('Info properti')">&#127968; Properti</button>
+                <button class="quick-btn" onclick="sendQuick('Info project')">&#128203; Project</button>
+                <button class="quick-btn" onclick="sendQuick('Jam operasional')">&#128337; Jam</button>
+                <button class="quick-btn" onclick="sendQuick('Fitur')">&#9881; Fitur</button>
+            </div>
+
+            <!-- Messages -->
+            <div class="chat-messages" id="chatMessages">
+                <div class="welcome-msg" id="welcomeMsg">
+                    <div class="icon">&#129302;</div>
+                    <h3>Selamat Datang!</h3>
+                    <p>Hai! Saya AbsensiBot, asisten virtual Anda.<br>Ketik pesan atau pilih opsi cepat di atas untuk mulai.</p>
+                </div>
+            </div>
+
+            <!-- Input -->
+            <div class="chat-input-area">
+                <div class="chat-input-wrapper">
+                    <textarea class="chat-input" id="chatInput" placeholder="Ketik pesan Anda..." rows="1" onkeydown="handleKey(event)"></textarea>
+                </div>
+                <button class="chat-send-btn" id="sendBtn" onclick="sendMessage()">&#10148;</button>
+            </div>
+            <div class="chat-actions">
+                <button class="chat-clear-btn" onclick="clearChat()">&#128465; Hapus Chat</button>
+                <span class="chat-session-id" id="sessionInfo"></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let sessionId = localStorage.getItem('chatSessionId') || '';
+        let isLoading = false;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (sessionId) {
+                loadHistory(sessionId);
+                document.getElementById('sessionInfo').textContent = 'Session: ' + sessionId;
+            }
+            autoResizeInput();
+        });
+
+        function autoResizeInput() {
+            const input = document.getElementById('chatInput');
+            input.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+            });
+        }
+
+        function handleKey(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        }
+
+        function sendQuick(msg) {
+            document.getElementById('chatInput').value = msg;
+            sendMessage();
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            if (!message || isLoading) return;
+
+            // Hide welcome
+            const welcome = document.getElementById('welcomeMsg');
+            if (welcome) welcome.style.display = 'none';
+
+            // Show user message
+            appendMessage('user', message);
+            input.value = '';
+            input.style.height = 'auto';
+
+            // Show typing indicator
+            isLoading = true;
+            document.getElementById('sendBtn').disabled = true;
+            showTyping();
+
+            // Send to API
+            fetch('/chatbot/api/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sessionId: sessionId, message: message })
+            })
+            .then(r => r.json())
+            .then(data => {
+                hideTyping();
+                if (data.sessionId) {
+                    sessionId = data.sessionId;
+                    localStorage.setItem('chatSessionId', sessionId);
+                    document.getElementById('sessionInfo').textContent = 'Session: ' + sessionId;
+                }
+                appendMessage('bot', data.botReply || 'Maaf, tidak ada respons.');
+            })
+            .catch(() => {
+                hideTyping();
+                appendMessage('bot', 'Maaf, terjadi kesalahan koneksi. Silakan coba lagi.');
+            })
+            .finally(() => {
+                isLoading = false;
+                document.getElementById('sendBtn').disabled = false;
+                input.focus();
+            });
+        }
+
+        function appendMessage(sender, text) {
+            const container = document.getElementById('chatMessages');
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'message ' + sender;
+
+            const avatar = sender === 'bot' ? '&#129302;' : '&#128100;';
+            msgDiv.innerHTML = `
+                <div class="msg-avatar">${avatar}</div>
+                <div class="msg-body">
+                    <div class="msg-bubble">${escapeHtml(text)}</div>
+                    <div class="msg-time">${timeStr}</div>
+                </div>
+            `;
+
+            container.appendChild(msgDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function showTyping() {
+            const container = document.getElementById('chatMessages');
+            const typing = document.createElement('div');
+            typing.id = 'typingIndicator';
+            typing.className = 'message bot';
+            typing.innerHTML = `
+                <div class="msg-avatar">&#129302;</div>
+                <div class="typing-indicator">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+            `;
+            container.appendChild(typing);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function hideTyping() {
+            const typing = document.getElementById('typingIndicator');
+            if (typing) typing.remove();
+        }
+
+        function loadHistory(sid) {
+            fetch('/chatbot/api/history/' + sid)
+                .then(r => r.json())
+                .then(data => {
+                    if (data && data.length > 0) {
+                        const welcome = document.getElementById('welcomeMsg');
+                        if (welcome) welcome.style.display = 'none';
+                        data.forEach(msg => appendMessage(msg.sender, msg.message));
+                    }
+                })
+                .catch(() => {});
+        }
+
+        function clearChat() {
+            if (!sessionId) {
+                document.getElementById('chatMessages').innerHTML = `
+                    <div class="welcome-msg" id="welcomeMsg">
+                        <div class="icon">&#129302;</div>
+                        <h3>Selamat Datang!</h3>
+                        <p>Hai! Saya AbsensiBot, asisten virtual Anda.<br>Ketik pesan atau pilih opsi cepat di atas untuk mulai.</p>
+                    </div>`;
+                return;
+            }
+
+            fetch('/chatbot/api/clear', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sessionId: sessionId })
+            })
+            .then(r => r.json())
+            .then(() => {
+                sessionId = '';
+                localStorage.removeItem('chatSessionId');
+                document.getElementById('sessionInfo').textContent = '';
+                document.getElementById('chatMessages').innerHTML = `
+                    <div class="welcome-msg" id="welcomeMsg">
+                        <div class="icon">&#129302;</div>
+                        <h3>Selamat Datang!</h3>
+                        <p>Hai! Saya AbsensiBot, asisten virtual Anda.<br>Ketik pesan atau pilih opsi cepat di atas untuk mulai.</p>
+                    </div>`;
+                showToast('Chat berhasil dihapus', 'success');
+            })
+            .catch(() => showToast('Gagal menghapus chat', 'error'));
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML.replace(/\n/g, '<br>');
+        }
+
+        function showToast(msg, type) {
+            const t = document.createElement('div'); t.className = 'toast ' + type; t.textContent = msg; document.body.appendChild(t);
+            setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity 0.3s'; setTimeout(() => t.remove(), 300); }, 3000);
+        }
+    </script>
+</body>
+</html>

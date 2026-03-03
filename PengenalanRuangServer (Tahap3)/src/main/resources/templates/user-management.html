@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Panel - RuangServer</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #0f172a; --bg2: #1e293b; --bg3: #334155;
+            --primary: #3b82f6; --primary-glow: rgba(59,130,246,0.3);
+            --success: #10b981; --danger: #ef4444; --warning: #f59e0b;
+            --info: #06b6d4; --purple: #8b5cf6;
+            --text: #f1f5f9; --text-muted: #94a3b8;
+            --border: rgba(148,163,184,0.15);
+            --card-bg: rgba(30,41,59,0.8);
+        }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+        /* ===== SIDEBAR ===== */
+        .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 260px; background: var(--bg2); border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 100; overflow-y: auto; }
+        .sidebar-header { padding: 20px; border-bottom: 1px solid var(--border); }
+        .sidebar-header .logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+        .sidebar-header .logo-icon { width: 40px; height: 40px; background: linear-gradient(135deg, var(--primary), var(--purple)); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        .sidebar-header .logo-text { font-size: 18px; font-weight: 700; color: var(--text); }
+        .sidebar-header .logo-sub { font-size: 11px; color: var(--text-muted); }
+        .sidebar-nav { flex: 1; padding: 12px; }
+        .nav-label { font-size: 11px; text-transform: uppercase; color: var(--text-muted); padding: 8px 12px; letter-spacing: 1px; font-weight: 600; }
+        .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; text-decoration: none; color: var(--text-muted); font-size: 14px; transition: all 0.2s; margin-bottom: 2px; }
+        .nav-item:hover { background: rgba(59,130,246,0.1); color: var(--text); }
+        .nav-item.active { background: linear-gradient(90deg, rgba(59,130,246,0.2), transparent); color: var(--primary); font-weight: 600; border-left: 3px solid var(--primary); }
+        .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+        .sidebar-footer { padding: 16px; border-top: 1px solid var(--border); }
+        .sidebar-footer .version { text-align: center; font-size: 11px; color: var(--text-muted); margin-top: 8px; }
+
+        /* ===== MAIN ===== */
+        .main { margin-left: 260px; padding: 24px; min-height: 100vh; }
+
+        /* ===== TOP BAR ===== */
+        .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; padding: 16px 24px; background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border); }
+        .topbar h1 { font-size: 22px; font-weight: 700; }
+        .topbar h1 span { color: var(--primary); }
+        .topbar-actions { display: flex; gap: 8px; }
+
+        /* ===== TABS ===== */
+        .tabs { display: flex; gap: 4px; margin-bottom: 24px; background: var(--bg2); border-radius: 12px; padding: 4px; border: 1px solid var(--border); }
+        .tab { flex: 1; padding: 12px; text-align: center; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; color: var(--text-muted); transition: all 0.3s; }
+        .tab:hover { color: var(--text); background: rgba(59,130,246,0.1); }
+        .tab.active { background: var(--primary); color: #fff; box-shadow: 0 4px 12px rgba(59,130,246,0.3); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* ===== CARDS ===== */
+        .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 20px; backdrop-filter: blur(10px); }
+        .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+        .card-title { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+
+        /* ===== PROFILE SECTION ===== */
+        .profile-container { display: grid; grid-template-columns: 300px 1fr; gap: 24px; }
+        .profile-photo-section { text-align: center; }
+        .profile-avatar { width: 150px; height: 150px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--purple)); display: flex; align-items: center; justify-content: center; font-size: 56px; font-weight: 700; margin: 0 auto 16px; border: 4px solid var(--border); overflow: hidden; }
+        .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .profile-name { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+        .profile-nim { color: var(--text-muted); font-size: 14px; margin-bottom: 8px; }
+        .profile-role { display: inline-block; padding: 4px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .role-admin { background: rgba(139,92,246,0.2); color: var(--purple); }
+        .role-user { background: rgba(59,130,246,0.2); color: var(--primary); }
+        .profile-details { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .detail-item { background: var(--bg); border-radius: 10px; padding: 16px; border: 1px solid var(--border); }
+        .detail-label { font-size: 12px; color: var(--text-muted); margin-bottom: 4px; }
+        .detail-value { font-size: 16px; font-weight: 600; }
+        .profile-status { display: flex; align-items: center; gap: 6px; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; }
+        .status-dot.active { background: var(--success); box-shadow: 0 0 8px var(--success); }
+        .status-dot.inactive { background: var(--danger); }
+
+        /* ===== ATTENDANCE FACE SCAN ===== */
+        .attendance-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+        .camera-box { position: relative; background: #000; border-radius: 12px; overflow: hidden; aspect-ratio: 4/3; }
+        .camera-box video { width: 100%; height: 100%; object-fit: cover; }
+        .camera-box canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .camera-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; }
+        .scan-frame { width: 200px; height: 200px; border: 2px dashed rgba(59,130,246,0.5); border-radius: 50%; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%,100%{ border-color: rgba(59,130,246,0.3); } 50%{ border-color: rgba(59,130,246,0.8); } }
+
+        .clock-panel { display: flex; flex-direction: column; gap: 16px; }
+        .clock-display { background: var(--bg); border-radius: 12px; padding: 24px; text-align: center; border: 1px solid var(--border); }
+        .clock-time { font-size: 48px; font-weight: 700; font-family: 'Courier New', monospace; color: var(--primary); }
+        .clock-date { font-size: 14px; color: var(--text-muted); margin-top: 4px; }
+
+        .clock-status { background: var(--bg); border-radius: 12px; padding: 20px; border: 1px solid var(--border); }
+        .clock-status-label { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+        .clock-status-value { font-size: 16px; font-weight: 600; }
+        .clock-status-value.clocked-in { color: var(--success); }
+        .clock-status-value.not-clocked { color: var(--text-muted); }
+
+        .btn-clock { padding: 16px 32px; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; transition: all 0.3s; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-clock-in { background: linear-gradient(135deg, var(--success), #059669); color: #fff; }
+        .btn-clock-in:hover { box-shadow: 0 6px 20px rgba(16,185,129,0.4); transform: translateY(-2px); }
+        .btn-clock-out { background: linear-gradient(135deg, var(--danger), #dc2626); color: #fff; }
+        .btn-clock-out:hover { box-shadow: 0 6px 20px rgba(239,68,68,0.4); transform: translateY(-2px); }
+        .btn-clock:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        /* ===== TABLE ===== */
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th { padding: 12px 16px; text-align: left; font-size: 12px; text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid var(--border); font-weight: 600; letter-spacing: 0.5px; }
+        td { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: middle; }
+        tr:hover { background: rgba(59,130,246,0.05); }
+
+        .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+        .badge-success { background: rgba(16,185,129,0.15); color: var(--success); }
+        .badge-warning { background: rgba(245,158,11,0.15); color: var(--warning); }
+        .badge-danger { background: rgba(239,68,68,0.15); color: var(--danger); }
+        .badge-info { background: rgba(6,182,212,0.15); color: var(--info); }
+        .badge-admin { background: rgba(139,92,246,0.2); color: var(--purple); }
+        .badge-user { background: rgba(59,130,246,0.2); color: var(--primary); }
+
+        /* ===== STAT CARDS ===== */
+        .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .stat-card { background: var(--card-bg); border-radius: 12px; padding: 20px; border: 1px solid var(--border); display: flex; align-items: center; gap: 16px; }
+        .stat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+        .stat-icon.blue { background: rgba(59,130,246,0.15); color: var(--primary); }
+        .stat-icon.green { background: rgba(16,185,129,0.15); color: var(--success); }
+        .stat-icon.orange { background: rgba(245,158,11,0.15); color: var(--warning); }
+        .stat-icon.red { background: rgba(239,68,68,0.15); color: var(--danger); }
+        .stat-icon.purple { background: rgba(139,92,246,0.15); color: var(--purple); }
+        .stat-info .stat-value { font-size: 24px; font-weight: 700; }
+        .stat-info .stat-label { font-size: 12px; color: var(--text-muted); }
+
+        /* ===== USER TABLE (Admin Only) ===== */
+        .user-row-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; }
+        .user-row-info { display: flex; align-items: center; gap: 10px; }
+
+        /* ===== BUTTONS ===== */
+        .btn { padding: 8px 16px; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .btn-primary { background: var(--primary); color: #fff; }
+        .btn-primary:hover { background: #2563eb; }
+        .btn-success { background: var(--success); color: #fff; }
+        .btn-danger { background: var(--danger); color: #fff; }
+        .btn-sm { padding: 5px 10px; font-size: 11px; }
+
+        /* ===== LOADING ===== */
+        .loading-text { text-align: center; padding: 40px; color: var(--text-muted); }
+        .spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.6s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ===== ALERT ===== */
+        .alert { padding: 14px 20px; border-radius: 10px; margin-bottom: 16px; font-size: 14px; display: none; align-items: center; gap: 10px; }
+        .alert-success { background: rgba(16,185,129,0.15); color: var(--success); border: 1px solid rgba(16,185,129,0.3); }
+        .alert-danger { background: rgba(239,68,68,0.15); color: var(--danger); border: 1px solid rgba(239,68,68,0.3); }
+        .alert-info { background: rgba(6,182,212,0.15); color: var(--info); border: 1px solid rgba(6,182,212,0.3); }
+
+        /* ===== EDIT FORM ===== */
+        .form-group { margin-bottom: 16px; }
+        .form-label { display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 6px; font-weight: 500; }
+        .form-input { width: 100%; padding: 10px 14px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 14px; transition: border-color 0.2s; }
+        .form-input:focus { outline: none; border-color: var(--primary); }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 1024px) {
+            .sidebar { display: none; }
+            .main { margin-left: 0; }
+            .profile-container { grid-template-columns: 1fr; }
+            .attendance-grid { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 768px) {
+            .stat-grid { grid-template-columns: 1fr 1fr; }
+            .tabs { flex-wrap: wrap; }
+        }
+
+        /* Notification toast */
+        .toast { position: fixed; top: 20px; right: 20px; padding: 16px 24px; border-radius: 12px; color: #fff; font-weight: 600; z-index: 9999; transform: translateX(400px); transition: transform 0.4s ease; }
+        .toast.show { transform: translateX(0); }
+        .toast-success { background: linear-gradient(135deg, var(--success), #059669); }
+        .toast-error { background: linear-gradient(135deg, var(--danger), #dc2626); }
+        .toast-info { background: linear-gradient(135deg, var(--primary), #2563eb); }
+    </style>
+</head>
+<body>
+
+<!-- TOAST -->
+<div id="toast" class="toast"></div>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+    <div class="sidebar-header">
+        <div class="logo">
+            <div class="logo-icon">&#128421;</div>
+            <div>
+                <div class="logo-text">RuangServer</div>
+                <div class="logo-sub">Monitoring System</div>
+            </div>
+        </div>
+    </div>
+    <nav class="sidebar-nav">
+        <div class="nav-label">Menu Utama</div>
+        <a class="nav-item" href="/">
+            <span class="nav-icon">&#9632;</span>
+            <span>Dashboard</span>
+        </a>
+
+        <div class="nav-label" style="margin-top:18px;">Server Monitoring</div>
+        <a class="nav-item" href="/server-monitor">
+            <span class="nav-icon">&#128421;</span>
+            <span>Monitor Server</span>
+        </a>
+        <a class="nav-item" href="/server-monitor-register">
+            <span class="nav-icon">&#128248;</span>
+            <span>Registrasi Server</span>
+        </a>
+
+        <div class="nav-label" style="margin-top:18px;">User</div>
+        <a class="nav-item active" href="/user-management">
+            <span class="nav-icon">&#128100;</span>
+            <span>User Panel</span>
+        </a>
+
+        <div class="nav-label" style="margin-top:18px;">Face Recognition AI</div>
+        <a class="nav-item" href="/face-register">
+            <span class="nav-icon">&#128248;</span>
+            <span>Registrasi Wajah</span>
+        </a>
+        <a class="nav-item" href="/face-absensi">
+            <span class="nav-icon">&#129302;</span>
+            <span>Absensi Wajah (AI)</span>
+        </a>
+
+        <div class="nav-label" style="margin-top:18px;">Fitur Lainnya</div>
+        <a class="nav-item" href="/property">
+            <span class="nav-icon">&#127968;</span>
+            <span>Real Estate</span>
+        </a>
+        <a class="nav-item" href="/project">
+            <span class="nav-icon">&#128203;</span>
+            <span>Project Management</span>
+        </a>
+        <a class="nav-item" href="/chatbot">
+            <span class="nav-icon">&#129302;</span>
+            <span>Chatbot</span>
+        </a>
+        <a class="nav-item" href="/music">
+            <span class="nav-icon">&#127925;</span>
+            <span>Music Streaming</span>
+        </a>
+        <a class="nav-item" href="/expense">
+            <span class="nav-icon">&#128176;</span>
+            <span>Expense Report</span>
+        </a>
+        <a class="nav-item" href="/language">
+            <span class="nav-icon">&#127760;</span>
+            <span>Language Learning</span>
+        </a>
+    </nav>
+    <div class="sidebar-footer">
+        <div class="version">RuangServer v3.0</div>
+    </div>
+</aside>
+
+<!-- MAIN CONTENT -->
+<div class="main">
+    <!-- TOPBAR -->
+    <div class="topbar">
+        <h1>&#128100; <span>User Panel</span> — RuangServer</h1>
+        <div class="topbar-actions">
+            <span id="currentUserDisplay" style="color:var(--text-muted); font-size:13px;"></span>
+        </div>
+    </div>
+
+    <!-- ALERT -->
+    <div id="alertBox" class="alert"></div>
+
+    <!-- LOGIN/SELECT USER SECTION (shown when no user is selected) -->
+    <div id="userSelectSection">
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">&#128274; Pilih User / Login Face</div>
+            </div>
+            <p style="color:var(--text-muted); margin-bottom:16px;">Scan wajah Anda atau pilih user dari daftar untuk mengakses panel.</p>
+
+            <div class="attendance-grid">
+                <!-- Camera for face login -->
+                <div>
+                    <div class="camera-box" id="loginCameraBox">
+                        <video id="loginVideo" autoplay muted playsinline></video>
+                        <canvas id="loginCanvas"></canvas>
+                        <div class="camera-overlay">
+                            <div class="scan-frame"></div>
+                        </div>
+                    </div>
+                    <div style="text-align:center; margin-top:12px;">
+                        <button class="btn btn-primary" onclick="startLoginCamera()" id="btnStartLoginCam">&#128247; Aktifkan Kamera</button>
+                        <button class="btn btn-success" onclick="loginWithFace()" id="btnLoginFace" style="display:none;">&#128274; Login dengan Wajah</button>
+                        <p id="loginStatus" style="color:var(--text-muted); font-size:13px; margin-top:8px;"></p>
+                    </div>
+                </div>
+
+                <!-- User list for manual selection -->
+                <div>
+                    <div class="card-title" style="margin-bottom:12px;">&#128203; Atau Pilih dari Daftar</div>
+                    <div id="userListForSelect" class="loading-text">Memuat daftar user...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN PANEL (shown after user is selected) -->
+    <div id="mainPanel" style="display:none;">
+
+        <!-- TABS -->
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('profile')">&#128100; Profil</div>
+            <div class="tab" onclick="switchTab('attendance')">&#128336; Absensi</div>
+            <div class="tab" onclick="switchTab('history')">&#128203; Riwayat</div>
+            <div class="tab" id="tabAdmin" style="display:none;" onclick="switchTab('admin')">&#128272; Admin</div>
+        </div>
+
+        <!-- TAB: PROFIL -->
+        <div id="tab-profile" class="tab-content active">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">&#128100; Profil User</div>
+                    <button class="btn btn-primary btn-sm" onclick="toggleEditProfile()">&#9998; Edit Profil</button>
+                </div>
+                <div class="profile-container">
+                    <div class="profile-photo-section">
+                        <div class="profile-avatar" id="profileAvatar">
+                            <span id="profileAvatarText">?</span>
+                        </div>
+                        <div class="profile-name" id="profileName">-</div>
+                        <div class="profile-nim" id="profileNim">NIM: -</div>
+                        <div class="profile-role" id="profileRole">-</div>
+                    </div>
+                    <div>
+                        <div class="profile-details">
+                            <div class="detail-item">
+                                <div class="detail-label">Status Akun</div>
+                                <div class="detail-value profile-status" id="profileStatus">
+                                    <span class="status-dot"></span> -
+                                </div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Jumlah Foto Wajah</div>
+                                <div class="detail-value" id="profileFaceCount">0</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Terdaftar Sejak</div>
+                                <div class="detail-value" id="profileCreatedAt">-</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Total Kehadiran</div>
+                                <div class="detail-value" id="profileTotalAttendance">0</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Status Hari Ini</div>
+                                <div class="detail-value" id="profileTodayStatus">Belum Hadir</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Total Akses Log</div>
+                                <div class="detail-value" id="profileTotalLogs">0</div>
+                            </div>
+                        </div>
+
+                        <!-- EDIT FORM (hidden by default) -->
+                        <div id="editProfileForm" style="display:none; margin-top:20px;">
+                            <div class="card" style="background:var(--bg);">
+                                <div class="card-title" style="margin-bottom:16px;">&#9998; Edit Profil</div>
+                                <div class="form-group">
+                                    <label class="form-label">Nama Lengkap</label>
+                                    <input type="text" id="editNama" class="form-input" placeholder="Nama lengkap">
+                                </div>
+                                <div style="display:flex; gap:8px;">
+                                    <button class="btn btn-success" onclick="saveProfile()">&#10004; Simpan</button>
+                                    <button class="btn btn-danger" onclick="toggleEditProfile()">&#10006; Batal</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: ABSENSI (Clock In/Out) -->
+        <div id="tab-attendance" class="tab-content">
+            <!-- Stats -->
+            <div class="stat-grid" id="attendanceStats">
+                <div class="stat-card">
+                    <div class="stat-icon green">&#128336;</div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="statTodayTotal">0</div>
+                        <div class="stat-label">Total Hadir Hari Ini</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon blue">&#9989;</div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="statActiveNow">0</div>
+                        <div class="stat-label">Sedang Aktif</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon orange">&#128682;</div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="statCompleted">0</div>
+                        <div class="stat-label">Sudah Pulang</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">&#128247; Absensi Wajah — Clock In / Clock Out</div>
+                </div>
+
+                <div class="attendance-grid">
+                    <!-- Camera -->
+                    <div>
+                        <div class="camera-box" id="attendCameraBox">
+                            <video id="attendVideo" autoplay muted playsinline></video>
+                            <canvas id="attendCanvas"></canvas>
+                            <div class="camera-overlay">
+                                <div class="scan-frame"></div>
+                            </div>
+                        </div>
+                        <div style="text-align:center; margin-top:12px;">
+                            <button class="btn btn-primary" onclick="startAttendCamera()" id="btnStartAttendCam">&#128247; Aktifkan Kamera</button>
+                            <p id="attendStatus" style="color:var(--text-muted); font-size:13px; margin-top:8px;"></p>
+                        </div>
+                    </div>
+
+                    <!-- Clock & Buttons -->
+                    <div class="clock-panel">
+                        <div class="clock-display">
+                            <div class="clock-time" id="clockTime">--:--:--</div>
+                            <div class="clock-date" id="clockDate">-</div>
+                        </div>
+
+                        <div class="clock-status">
+                            <div class="clock-status-label">Status Hari Ini</div>
+                            <div class="clock-status-value" id="clockStatusText">Memuat...</div>
+                            <div style="margin-top:8px; font-size:13px; color:var(--text-muted);">
+                                <span>Clock In: </span><strong id="clockInDisplay">-</strong>
+                            </div>
+                            <div style="font-size:13px; color:var(--text-muted);">
+                                <span>Clock Out: </span><strong id="clockOutDisplay">-</strong>
+                            </div>
+                        </div>
+
+                        <button class="btn-clock btn-clock-in" id="btnClockIn" onclick="doClockIn()">
+                            &#9654; Clock In
+                        </button>
+                        <button class="btn-clock btn-clock-out" id="btnClockOut" onclick="doClockOut()" style="display:none;">
+                            &#9632; Clock Out
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Today Attendance Table -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">&#128203; Kehadiran Hari Ini</div>
+                    <button class="btn btn-primary btn-sm" onclick="loadTodayAttendance()">&#8635; Refresh</button>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>NIM</th>
+                                <th>Role</th>
+                                <th>Clock In</th>
+                                <th>Clock Out</th>
+                                <th>Durasi</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="todayAttendanceBody">
+                            <tr><td colspan="7" class="loading-text">Memuat data...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: RIWAYAT -->
+        <div id="tab-history" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">&#128203; Riwayat Kehadiran</div>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Tanggal</th>
+                                <th>Clock In</th>
+                                <th>Clock Out</th>
+                                <th>Durasi</th>
+                                <th>Metode</th>
+                                <th>Confidence</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyBody">
+                            <tr><td colspan="7" class="loading-text">Memuat riwayat...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">&#128274; Riwayat Akses Server</div>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Tanggal & Waktu</th>
+                                <th>Status</th>
+                                <th>Confidence</th>
+                                <th>IP Address</th>
+                                <th>Catatan</th>
+                            </tr>
+                        </thead>
+                        <tbody id="accessLogBody">
+                            <tr><td colspan="5" class="loading-text">Memuat log akses...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: ADMIN (only visible for admins) -->
+        <div id="tab-admin" class="tab-content">
+            <div class="stat-grid" id="adminStats"></div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">&#128100; Manajemen User (Admin Only)</div>
+                    <button class="btn btn-primary btn-sm" onclick="loadAllUsers()">&#8635; Refresh</button>
+                </div>
+                <p style="color:var(--text-muted); font-size:13px; margin-bottom:16px;">
+                    &#9888; Hapus user tidak tersedia. Hanya bisa mengubah role dan status aktif user.
+                </p>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>NIM</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th>Foto Wajah</th>
+                                <th>Terdaftar</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminUserBody">
+                            <tr><td colspan="7" class="loading-text">Memuat data user...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- end mainPanel -->
+</div><!-- end main -->
+
+<script>
+    // ===== STATE =====
+    let currentUser = null;
+    let currentToken = null;
+    let faceApiLoaded = false;
+    let loginStream = null;
+    let attendStream = null;
+    let loginFaceMatcher = null;
+    let attendFaceMatcher = null;
+    let allFaceDescriptors = [];
+
+    // ===== INIT =====
+    document.addEventListener('DOMContentLoaded', () => {
+        updateClock();
+        setInterval(updateClock, 1000);
+        loadUserList();
+        loadFaceApi();
+    });
+
+    // ===== CLOCK =====
+    function updateClock() {
+        const now = new Date();
+        const time = now.toLocaleTimeString('id-ID', { hour12: false });
+        const date = now.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        const el = document.getElementById('clockTime');
+        if (el) el.textContent = time;
+        const el2 = document.getElementById('clockDate');
+        if (el2) el2.textContent = date;
+    }
+
+    // ===== TOAST =====
+    function showToast(msg, type = 'info') {
+        const t = document.getElementById('toast');
+        t.className = 'toast toast-' + type + ' show';
+        t.textContent = msg;
+        setTimeout(() => t.classList.remove('show'), 4000);
+    }
+
+    function showAlert(msg, type = 'info') {
+        const a = document.getElementById('alertBox');
+        a.className = 'alert alert-' + type;
+        a.style.display = 'flex';
+        a.innerHTML = msg;
+        setTimeout(() => a.style.display = 'none', 5000);
+    }
+
+    // ===== FACE API LOADING =====
+    async function loadFaceApi() {
+        try {
+            const MODEL_URL = 'https://cdn.jsdelivr.net/gh/nicehash/nicehash-face-api@master/weights';
+            await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+            await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+            await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+            await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
+            faceApiLoaded = true;
+            console.log('Face API loaded');
+            // Load all face descriptors from server
+            await loadAllFaceDescriptors();
+        } catch (e) {
+            console.error('Failed to load face-api:', e);
+        }
+    }
+
+    async function loadAllFaceDescriptors() {
+        try {
+            const res = await fetch('/api/face/all');
+            const data = await res.json();
+            if (data && data.length > 0) {
+                allFaceDescriptors = [];
+                const labelMap = {};
+                data.forEach(f => {
+                    const key = f.nim || f.label;
+                    if (!labelMap[key]) labelMap[key] = { label: f.label, nim: f.nim, descriptors: [] };
+                    try {
+                        const desc = JSON.parse(f.faceDescriptor || f.face_descriptor);
+                        labelMap[key].descriptors.push(new Float32Array(desc));
+                    } catch(e) {}
+                });
+                Object.values(labelMap).forEach(item => {
+                    if (item.descriptors.length > 0) {
+                        allFaceDescriptors.push(new faceapi.LabeledFaceDescriptors(item.nim || item.label, item.descriptors));
+                    }
+                });
+                if (allFaceDescriptors.length > 0) {
+                    loginFaceMatcher = new faceapi.FaceMatcher(allFaceDescriptors, 0.5);
+                    attendFaceMatcher = new faceapi.FaceMatcher(allFaceDescriptors, 0.5);
+                }
+                console.log('Loaded', allFaceDescriptors.length, 'face descriptors');
+            }
+        } catch (e) {
+            console.log('No face data available or error:', e.message);
+        }
+    }
+
+    // ===== USER LIST =====
+    async function loadUserList() {
+        try {
+            const res = await fetch('/api/monitor/users');
+            const data = await res.json();
+            if (data.success && data.users) {
+                renderUserSelectList(data.users);
+            }
+        } catch (e) {
+            document.getElementById('userListForSelect').innerHTML = '<p style="color:var(--danger)">Gagal memuat user</p>';
+        }
+    }
+
+    function renderUserSelectList(users) {
+        const container = document.getElementById('userListForSelect');
+        if (users.length === 0) {
+            container.innerHTML = '<p style="color:var(--text-muted)">Belum ada user terdaftar</p>';
+            return;
+        }
+        let html = '<div style="max-height:300px; overflow-y:auto;">';
+        users.forEach(u => {
+            const initial = (u.nama || '?').charAt(0).toUpperCase();
+            const roleBadge = u.role === 'ADMIN' ? '<span class="badge badge-admin">ADMIN</span>' : '<span class="badge badge-user">USER</span>';
+            const statusDot = u.isActive ? '<span class="status-dot active" style="display:inline-block;"></span>' : '<span class="status-dot inactive" style="display:inline-block;"></span>';
+            html += `<div style="display:flex; align-items:center; gap:12px; padding:10px; border-radius:8px; cursor:pointer; border:1px solid var(--border); margin-bottom:6px; transition:all 0.2s;"
+                      onmouseover="this.style.background='rgba(59,130,246,0.1)'" onmouseout="this.style.background=''"
+                      onclick="selectUser('${u.nim}')">
+                <div class="user-row-avatar">${initial}</div>
+                <div style="flex:1;">
+                    <div style="font-weight:600; font-size:14px;">${u.nama}</div>
+                    <div style="font-size:12px; color:var(--text-muted);">NIM: ${u.nim}</div>
+                </div>
+                <div>${statusDot} ${roleBadge}</div>
+            </div>`;
+        });
+        html += '</div>';
+        container.innerHTML = html;
+    }
+
+    // ===== SELECT USER =====
+    async function selectUser(nim) {
+        try {
+            const res = await fetch('/api/monitor/profile/' + nim);
+            const data = await res.json();
+            if (data.success) {
+                currentUser = data.user;
+                currentToken = null; // no token for manual select
+
+                document.getElementById('userSelectSection').style.display = 'none';
+                document.getElementById('mainPanel').style.display = 'block';
+
+                // Show admin tab if admin
+                if (currentUser.role === 'ADMIN' || currentUser.isAdmin) {
+                    document.getElementById('tabAdmin').style.display = '';
+                }
+
+                document.getElementById('currentUserDisplay').innerHTML =
+                    '&#128100; ' + currentUser.nama + ' (' + currentUser.nim + ') <button class="btn btn-danger btn-sm" onclick="logoutUser()" style="margin-left:8px;">Logout</button>';
+
+                renderProfile(data);
+                loadAttendanceStatus();
+                loadTodayAttendance();
+                loadHistory(data);
+                showToast('Selamat datang, ' + currentUser.nama + '!', 'success');
+            }
+        } catch (e) {
+            showToast('Gagal memuat profil user', 'error');
+        }
+    }
+
+    function logoutUser() {
+        currentUser = null;
+        currentToken = null;
+        stopCamera(loginStream);
+        stopCamera(attendStream);
+        document.getElementById('userSelectSection').style.display = '';
+        document.getElementById('mainPanel').style.display = 'none';
+        document.getElementById('tabAdmin').style.display = 'none';
+        document.getElementById('currentUserDisplay').innerHTML = '';
+        switchTab('profile');
+    }
+
+    // ===== RENDER PROFILE =====
+    function renderProfile(data) {
+        const u = data.user;
+        const avatar = document.getElementById('profileAvatar');
+        if (u.photoUrl && u.photoUrl.startsWith('data:image')) {
+            avatar.innerHTML = '<img src="' + u.photoUrl + '" alt="foto">';
+        } else {
+            document.getElementById('profileAvatarText').textContent = (u.nama || '?').charAt(0).toUpperCase();
+        }
+        document.getElementById('profileName').textContent = u.nama;
+        document.getElementById('profileNim').textContent = 'NIM: ' + u.nim;
+
+        const roleEl = document.getElementById('profileRole');
+        roleEl.textContent = u.role;
+        roleEl.className = 'profile-role ' + (u.role === 'ADMIN' ? 'role-admin' : 'role-user');
+
+        const statusEl = document.getElementById('profileStatus');
+        if (u.isActive) {
+            statusEl.innerHTML = '<span class="status-dot active"></span> Aktif';
+        } else {
+            statusEl.innerHTML = '<span class="status-dot inactive"></span> Nonaktif';
+        }
+
+        document.getElementById('profileFaceCount').textContent = u.faceCount || 0;
+        document.getElementById('profileCreatedAt').textContent = u.createdAt ? new Date(u.createdAt).toLocaleDateString('id-ID') : '-';
+        document.getElementById('profileTotalAttendance').textContent = data.totalAttendance || 0;
+        document.getElementById('profileTotalLogs').textContent = data.totalAccessLogs || 0;
+
+        // Today status
+        if (data.activeClockIn) {
+            document.getElementById('profileTodayStatus').innerHTML = '<span style="color:var(--success)">&#9989; Sudah Clock-In (' + data.activeClockIn.clockInTime + ')</span>';
+        } else {
+            document.getElementById('profileTodayStatus').textContent = 'Belum Hadir';
+        }
+
+        document.getElementById('editNama').value = u.nama;
+    }
+
+    function toggleEditProfile() {
+        const form = document.getElementById('editProfileForm');
+        form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    }
+
+    async function saveProfile() {
+        if (!currentUser) return;
+        const nama = document.getElementById('editNama').value.trim();
+        if (!nama) { showToast('Nama tidak boleh kosong', 'error'); return; }
+        try {
+            const res = await fetch('/api/monitor/profile/' + currentUser.nim, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nama })
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast('Profil berhasil diperbarui!', 'success');
+                toggleEditProfile();
+                selectUser(currentUser.nim); // reload
+            } else {
+                showToast(data.message || 'Gagal memperbarui profil', 'error');
+            }
+        } catch (e) {
+            showToast('Error: ' + e.message, 'error');
+        }
+    }
+
+    // ===== TAB SWITCHING =====
+    function switchTab(tab) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.querySelector(`.tab[onclick="switchTab('${tab}')"]`).classList.add('active');
+        document.getElementById('tab-' + tab).classList.add('active');
+
+        if (tab === 'attendance') {
+            loadAttendanceStatus();
+            loadTodayAttendance();
+        } else if (tab === 'admin') {
+            loadAllUsers();
+        }
+    }
+
+    // ===== ATTENDANCE STATUS =====
+    async function loadAttendanceStatus() {
+        if (!currentUser) return;
+        try {
+            const res = await fetch('/api/monitor/attendance/status/' + currentUser.nim);
+            const data = await res.json();
+            updateClockButtons(data.isClockedIn, data.activeClockIn);
+        } catch (e) {
+            console.error('Error loading attendance status:', e);
+        }
+    }
+
+    function updateClockButtons(isClockedIn, activeClockIn) {
+        const btnIn = document.getElementById('btnClockIn');
+        const btnOut = document.getElementById('btnClockOut');
+        const statusText = document.getElementById('clockStatusText');
+        const clockInDisp = document.getElementById('clockInDisplay');
+        const clockOutDisp = document.getElementById('clockOutDisplay');
+
+        if (isClockedIn) {
+            btnIn.style.display = 'none';
+            btnOut.style.display = '';
+            statusText.className = 'clock-status-value clocked-in';
+            statusText.textContent = '✅ Sudah Clock-In';
+            clockInDisp.textContent = activeClockIn ? activeClockIn.clockInTime : '-';
+            clockOutDisp.textContent = '-';
+        } else {
+            btnIn.style.display = '';
+            btnOut.style.display = 'none';
+            statusText.className = 'clock-status-value not-clocked';
+            statusText.textContent = 'Belum Clock-In';
+            clockInDisp.textContent = '-';
+            clockOutDisp.textContent = '-';
+        }
+    }
+
+    // ===== CAMERA =====
+    async function startCamera(videoId) {
+        try {
+            const video = document.getElementById(videoId);
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 640, height: 480 } });
+            video.srcObject = stream;
+            return stream;
+        } catch (e) {
+            showToast('Gagal mengakses kamera: ' + e.message, 'error');
+            return null;
+        }
+    }
+
+    function stopCamera(stream) {
+        if (stream) {
+            stream.getTracks().forEach(t => t.stop());
+        }
+    }
+
+    async function startLoginCamera() {
+        if (!faceApiLoaded) {
+            showToast('Face API belum siap, mohon tunggu...', 'info');
+            return;
+        }
+        loginStream = await startCamera('loginVideo');
+        if (loginStream) {
+            document.getElementById('btnStartLoginCam').style.display = 'none';
+            document.getElementById('btnLoginFace').style.display = '';
+            document.getElementById('loginStatus').textContent = 'Kamera aktif. Arahkan wajah Anda ke kamera.';
+        }
+    }
+
+    async function startAttendCamera() {
+        if (!faceApiLoaded) {
+            showToast('Face API belum siap, mohon tunggu...', 'info');
+            return;
+        }
+        attendStream = await startCamera('attendVideo');
+        if (attendStream) {
+            document.getElementById('btnStartAttendCam').style.display = 'none';
+            document.getElementById('attendStatus').textContent = 'Kamera aktif. Siap untuk absensi wajah.';
+        }
+    }
+
+    // ===== FACE LOGIN =====
+    async function loginWithFace() {
+        if (!faceApiLoaded || !loginFaceMatcher) {
+            showToast('Belum ada data wajah terdaftar', 'error');
+            return;
+        }
+        document.getElementById('loginStatus').textContent = 'Mendeteksi wajah...';
+        const video = document.getElementById('loginVideo');
+        try {
+            const detection = await faceapi.detectSingleFace(video, new faceapi.SsdMobilenetv1Options())
+                .withFaceLandmarks().withFaceDescriptor();
+            if (!detection) {
+                document.getElementById('loginStatus').textContent = 'Wajah tidak terdeteksi. Coba lagi.';
+                return;
+            }
+            const match = loginFaceMatcher.findBestMatch(detection.descriptor);
+            if (match.label !== 'unknown') {
+                const confidence = 1 - match.distance;
+                if (confidence >= 0.6) {
+                    document.getElementById('loginStatus').textContent = 'Dikenali: ' + match.label + ' (' + (confidence * 100).toFixed(1) + '%)';
+                    stopCamera(loginStream);
+                    selectUser(match.label);
+                } else {
+                    document.getElementById('loginStatus').textContent = 'Confidence terlalu rendah (' + (confidence * 100).toFixed(1) + '%). Coba lagi.';
+                }
+            } else {
+                document.getElementById('loginStatus').textContent = 'Wajah tidak dikenali. Silakan pilih manual atau registrasi dulu.';
+            }
+        } catch (e) {
+            document.getElementById('loginStatus').textContent = 'Error: ' + e.message;
+        }
+    }
+
+    // ===== CLOCK IN / OUT =====
+    async function doClockIn() {
+        if (!currentUser) return;
+        const btnIn = document.getElementById('btnClockIn');
+        btnIn.disabled = true;
+        btnIn.innerHTML = '<span class="spinner"></span> Memproses...';
+
+        let confidence = 0;
+        const video = document.getElementById('attendVideo');
+
+        // Try face detection if camera is active
+        if (attendStream && faceApiLoaded) {
+            try {
+                const detection = await faceapi.detectSingleFace(video, new faceapi.SsdMobilenetv1Options())
+                    .withFaceLandmarks().withFaceDescriptor();
+                if (detection && attendFaceMatcher) {
+                    const match = attendFaceMatcher.findBestMatch(detection.descriptor);
+                    confidence = 1 - match.distance;
+                }
+            } catch (e) { console.log('Face detection skipped:', e.message); }
+        }
+
+        try {
+            const res = await fetch('/api/monitor/attendance/clock-in', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    nim: currentUser.nim,
+                    nama: currentUser.nama,
+                    confidence: confidence
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast(data.message, 'success');
+                loadAttendanceStatus();
+                loadTodayAttendance();
+            } else {
+                showToast(data.message || 'Gagal clock-in', 'error');
+            }
+        } catch (e) {
+            showToast('Error: ' + e.message, 'error');
+        }
+        btnIn.disabled = false;
+        btnIn.innerHTML = '&#9654; Clock In';
+    }
+
+    async function doClockOut() {
+        if (!currentUser) return;
+        const btnOut = document.getElementById('btnClockOut');
+        btnOut.disabled = true;
+        btnOut.innerHTML = '<span class="spinner"></span> Memproses...';
+
+        let confidence = 0;
+        const video = document.getElementById('attendVideo');
+
+        if (attendStream && faceApiLoaded) {
+            try {
+                const detection = await faceapi.detectSingleFace(video, new faceapi.SsdMobilenetv1Options())
+                    .withFaceLandmarks().withFaceDescriptor();
+                if (detection && attendFaceMatcher) {
+                    const match = attendFaceMatcher.findBestMatch(detection.descriptor);
+                    confidence = 1 - match.distance;
+                }
+            } catch (e) { console.log('Face detection skipped:', e.message); }
+        }
+
+        try {
+            const res = await fetch('/api/monitor/attendance/clock-out', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    nim: currentUser.nim,
+                    confidence: confidence
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast(data.message, 'success');
+                loadAttendanceStatus();
+                loadTodayAttendance();
+            } else {
+                showToast(data.message || 'Gagal clock-out', 'error');
+            }
+        } catch (e) {
+            showToast('Error: ' + e.message, 'error');
+        }
+        btnOut.disabled = false;
+        btnOut.innerHTML = '&#9632; Clock Out';
+    }
+
+    // ===== TODAY ATTENDANCE TABLE =====
+    async function loadTodayAttendance() {
+        try {
+            const res = await fetch('/api/monitor/attendance/today');
+            const data = await res.json();
+            if (data.success) {
+                renderTodayAttendance(data.attendance);
+                if (data.stats) {
+                    document.getElementById('statTodayTotal').textContent = data.stats.todayTotal || 0;
+                    document.getElementById('statActiveNow').textContent = data.stats.activeNow || 0;
+                    document.getElementById('statCompleted').textContent = data.stats.completedToday || 0;
+                }
+            }
+        } catch (e) {
+            console.error('Error loading today attendance:', e);
+        }
+    }
+
+    function renderTodayAttendance(list) {
+        const tbody = document.getElementById('todayAttendanceBody');
+        if (!list || list.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="loading-text">Belum ada kehadiran hari ini</td></tr>';
+            return;
+        }
+        tbody.innerHTML = list.map(a => {
+            const roleBadge = a.role === 'ADMIN' ? '<span class="badge badge-admin">ADMIN</span>' : '<span class="badge badge-user">USER</span>';
+            const statusBadge = a.status === 'Aktif' ? '<span class="badge badge-success">Aktif</span>' : '<span class="badge badge-info">Selesai</span>';
+            return `<tr>
+                <td><strong>${a.nama || '-'}</strong></td>
+                <td>${a.nim || '-'}</td>
+                <td>${roleBadge}</td>
+                <td>${a.clockInTime || '-'}</td>
+                <td>${a.clockOutTime || '-'}</td>
+                <td>${a.duration || '-'}</td>
+                <td>${statusBadge}</td>
+            </tr>`;
+        }).join('');
+    }
+
+    // ===== HISTORY =====
+    function loadHistory(data) {
+        // Attendance history
+        const histBody = document.getElementById('historyBody');
+        if (data.attendance && data.attendance.length > 0) {
+            histBody.innerHTML = data.attendance.map(a => {
+                const statusBadge = a.status === 'Aktif' ? '<span class="badge badge-success">Aktif</span>' : '<span class="badge badge-info">Selesai</span>';
+                return `<tr>
+                    <td>${a.tanggal || '-'}</td>
+                    <td>${a.clockInTime || '-'}</td>
+                    <td>${a.clockOutTime || '-'}</td>
+                    <td>${a.duration || '-'}</td>
+                    <td>${a.method || '-'}</td>
+                    <td>${a.confidence ? (a.confidence * 100).toFixed(1) + '%' : '-'}</td>
+                    <td>${statusBadge}</td>
+                </tr>`;
+            }).join('');
+        } else {
+            histBody.innerHTML = '<tr><td colspan="7" class="loading-text">Belum ada riwayat kehadiran</td></tr>';
+        }
+
+        // Access logs
+        const logBody = document.getElementById('accessLogBody');
+        if (data.accessLogs && data.accessLogs.length > 0) {
+            logBody.innerHTML = data.accessLogs.map(l => {
+                const statusBadge = l.status === 'GRANTED' ? '<span class="badge badge-success">GRANTED</span>' : '<span class="badge badge-danger">DENIED</span>';
+                const dt = l.createdAt ? new Date(l.createdAt).toLocaleString('id-ID') : (l.tanggal ? l.tanggal + ' ' + l.jam : '-');
+                return `<tr>
+                    <td>${dt}</td>
+                    <td>${statusBadge}</td>
+                    <td>${l.confidence ? (l.confidence * 100).toFixed(1) + '%' : '-'}</td>
+                    <td>${l.ipAddress || '-'}</td>
+                    <td>${l.notes || '-'}</td>
+                </tr>`;
+            }).join('');
+        } else {
+            logBody.innerHTML = '<tr><td colspan="5" class="loading-text">Belum ada log akses</td></tr>';
+        }
+    }
+
+    // ===== ADMIN: ALL USERS =====
+    async function loadAllUsers() {
+        try {
+            const res = await fetch('/api/monitor/users');
+            const data = await res.json();
+            if (data.success) {
+                renderAdminUsers(data.users);
+                // Stats
+                const statsHtml = `
+                    <div class="stat-card">
+                        <div class="stat-icon blue">&#128100;</div>
+                        <div class="stat-info"><div class="stat-value">${data.total}</div><div class="stat-label">Total User</div></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon purple">&#128272;</div>
+                        <div class="stat-info"><div class="stat-value">${data.users.filter(u => u.role === 'ADMIN').length}</div><div class="stat-label">Admin</div></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon green">&#9989;</div>
+                        <div class="stat-info"><div class="stat-value">${data.users.filter(u => u.isActive).length}</div><div class="stat-label">Aktif</div></div>
+                    </div>
+                `;
+                document.getElementById('adminStats').innerHTML = statsHtml;
+            }
+        } catch (e) {
+            showToast('Gagal memuat data user', 'error');
+        }
+    }
+
+    function renderAdminUsers(users) {
+        const tbody = document.getElementById('adminUserBody');
+        if (!users || users.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="loading-text">Tidak ada user</td></tr>';
+            return;
+        }
+        tbody.innerHTML = users.map(u => {
+            const initial = (u.nama || '?').charAt(0).toUpperCase();
+            const roleBadge = u.role === 'ADMIN' ? '<span class="badge badge-admin">ADMIN</span>' : '<span class="badge badge-user">USER</span>';
+            const statusBadge = u.isActive ? '<span class="badge badge-success">Aktif</span>' : '<span class="badge badge-danger">Nonaktif</span>';
+            const created = u.createdAt ? new Date(u.createdAt).toLocaleDateString('id-ID') : '-';
+            const isCurrentUser = currentUser && currentUser.nim === u.nim;
+
+            let actions = '';
+            if (!isCurrentUser) {
+                const toggleRole = u.role === 'ADMIN' ? 'USER' : 'ADMIN';
+                const toggleActive = u.isActive ? 'false' : 'true';
+                actions += `<button class="btn btn-primary btn-sm" onclick="changeRole('${u.nim}','${toggleRole}')" title="Ubah ke ${toggleRole}">&#8646; ${toggleRole}</button> `;
+                actions += `<button class="btn ${u.isActive ? 'btn-danger' : 'btn-success'} btn-sm" onclick="toggleStatus('${u.nim}',${toggleActive})">${u.isActive ? '&#10006; Nonaktifkan' : '&#10004; Aktifkan'}</button>`;
+            } else {
+                actions = '<span style="color:var(--text-muted); font-size:12px;">Anda</span>';
+            }
+
+            return `<tr>
+                <td><div class="user-row-info"><div class="user-row-avatar">${initial}</div><strong>${u.nama}</strong></div></td>
+                <td>${u.nim}</td>
+                <td>${roleBadge}</td>
+                <td>${statusBadge}</td>
+                <td>${u.faceCount || 0} foto</td>
+                <td>${created}</td>
+                <td>${actions}</td>
+            </tr>`;
+        }).join('');
+    }
+
+    async function changeRole(nim, newRole) {
+        if (!currentUser || !currentUser.isAdmin) {
+            showToast('Hanya admin yang bisa mengubah role', 'error');
+            return;
+        }
+        try {
+            const res = await fetch('/api/monitor/users/' + nim + '/role', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + (currentToken || 'admin-temp')
+                },
+                body: JSON.stringify({ role: newRole })
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast(data.message, 'success');
+                loadAllUsers();
+            } else {
+                showToast(data.message || 'Gagal mengubah role', 'error');
+            }
+        } catch (e) {
+            showToast('Error: ' + e.message, 'error');
+        }
+    }
+
+    async function toggleStatus(nim, active) {
+        if (!currentUser || !currentUser.isAdmin) {
+            showToast('Hanya admin yang bisa mengubah status', 'error');
+            return;
+        }
+        try {
+            const res = await fetch('/api/monitor/users/' + nim + '/status', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + (currentToken || 'admin-temp')
+                },
+                body: JSON.stringify({ active: active })
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast(data.message, 'success');
+                loadAllUsers();
+            } else {
+                showToast(data.message || 'Gagal mengubah status', 'error');
+            }
+        } catch (e) {
+            showToast('Error: ' + e.message, 'error');
+        }
+    }
+</script>
+
+<footer style="margin-left:260px; padding:20px; text-align:center; color:var(--text-muted); font-size:12px; border-top:1px solid var(--border);">
+    &copy; 2026 RuangServer Monitoring System — User Panel v3.0
+</footer>
+
+</body>
+</html>

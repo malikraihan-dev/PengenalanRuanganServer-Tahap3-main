@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="id" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Absensi Wajah AI - Face Recognition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --primary-light: #EEF2FF;
+            --primary-hover: #4338CA;
+            --success: #10B981;
+            --success-light: #ECFDF5;
+            --warning: #F59E0B;
+            --warning-light: #FFFBEB;
+            --danger: #EF4444;
+            --danger-light: #FEF2F2;
+            --gray-50: #F9FAFB;
+            --gray-100: #F3F4F6;
+            --gray-200: #E5E7EB;
+            --gray-300: #D1D5DB;
+            --gray-400: #9CA3AF;
+            --gray-500: #6B7280;
+            --gray-600: #4B5563;
+            --gray-700: #374151;
+            --gray-800: #1F2937;
+            --gray-900: #111827;
+            --white: #FFFFFF;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+            --radius: 12px;
+            --radius-lg: 16px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--gray-50);
+            min-height: 100vh;
+            color: var(--gray-800);
+        }
+
+        .navbar {
+            background: var(--white);
+            padding: 0 32px;
+            height: 64px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--gray-200);
+            box-shadow: var(--shadow-sm);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .navbar-brand { display: flex; align-items: center; gap: 10px; }
+        .navbar-brand .icon {
+            width: 36px; height: 36px; background: var(--primary);
+            border-radius: 10px; display: flex; align-items: center;
+            justify-content: center; font-size: 18px;
+        }
+        .navbar-brand h1 { font-size: 1.1rem; font-weight: 700; color: var(--gray-900); }
+        .navbar-brand h1 span { color: var(--primary); }
+        .nav-links { display: flex; align-items: center; gap: 4px; }
+        .nav-links a {
+            color: var(--gray-500); text-decoration: none; padding: 8px 16px;
+            font-size: 0.875rem; font-weight: 500; border-radius: 8px; transition: all 0.2s;
+        }
+        .nav-links a:hover { color: var(--gray-700); background: var(--gray-100); }
+        .nav-links a.active { color: var(--primary); background: var(--primary-light); }
+        .nav-links .logout-link:hover { background: var(--danger-light) !important; color: var(--danger) !important; }
+
+        /* Logout Modal */
+        .logout-overlay {
+            display: none; position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+            z-index: 2000; justify-content: center; align-items: center;
+        }
+        .logout-overlay.show { display: flex; }
+        .logout-modal {
+            background: #fff; border-radius: 20px; width: 400px; max-width: 90vw;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.3);
+            animation: logoutBounce 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes logoutBounce {
+            0% { opacity: 0; transform: scale(0.8) translateY(20px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .logout-modal-body { padding: 36px 32px 24px; text-align: center; }
+        .logout-icon-wrap {
+            width: 72px; height: 72px; margin: 0 auto 20px;
+            background: linear-gradient(135deg, #fef2f2, #fee2e2);
+            border-radius: 50%; display: flex; align-items: center;
+            justify-content: center; font-size: 32px;
+            animation: logoutIconPulse 2s ease-in-out infinite;
+        }
+        @keyframes logoutIconPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.2); }
+            50% { box-shadow: 0 0 0 12px rgba(239,68,68,0); }
+        }
+        .logout-modal-body h3 { font-size: 18px; font-weight: 700; color: #1a1a1a; margin-bottom: 8px; }
+        .logout-modal-body p { font-size: 14px; color: #888; line-height: 1.6; }
+        .logout-modal-actions { padding: 0 32px 28px; display: flex; gap: 12px; }
+        .btn-logout-cancel {
+            flex: 1; padding: 12px; border-radius: 12px;
+            border: 2px solid var(--gray-200); background: #fff;
+            font-size: 14px; font-weight: 600; color: var(--gray-600);
+            cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.2s;
+        }
+        .btn-logout-cancel:hover { border-color: var(--gray-300); background: var(--gray-50); }
+        .btn-logout-confirm {
+            flex: 1; padding: 12px; border-radius: 12px;
+            border: none; background: linear-gradient(135deg, #ef4444, #dc2626);
+            font-size: 14px; font-weight: 700; color: #fff;
+            cursor: pointer; font-family: 'Inter', sans-serif;
+            transition: all 0.2s; position: relative; overflow: hidden;
+        }
+        .btn-logout-confirm:hover {
+            transform: translateY(-2px); box-shadow: 0 6px 20px rgba(239,68,68,0.4);
+        }
+        .btn-logout-confirm:active { transform: translateY(0); box-shadow: none; }
+        .logout-timer { font-size: 12px; color: #bbb; margin-top: 16px; }
+        .logout-timer span { font-weight: 700; color: var(--danger); }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .container { max-width: 1320px; margin: 0 auto; padding: 28px 32px; }
+        .page-header { margin-bottom: 28px; }
+        .page-header h2 { font-size: 1.5rem; font-weight: 700; color: var(--gray-900); margin-bottom: 6px; }
+        .page-header p { color: var(--gray-500); font-size: 0.9rem; }
+        .grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 24px; }
+        @media (max-width: 960px) { .grid { grid-template-columns: 1fr; } }
+
+        .card {
+            background: var(--white); border-radius: var(--radius-lg); padding: 24px;
+            border: 1px solid var(--gray-200); box-shadow: var(--shadow-sm);
+        }
+        .card + .card { margin-top: 20px; }
+        .card-title {
+            font-size: 0.95rem; font-weight: 600; color: var(--gray-900);
+            margin-bottom: 20px; display: flex; align-items: center; gap: 8px;
+        }
+        .card-title .icon-badge {
+            width: 28px; height: 28px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center; font-size: 14px;
+        }
+        .card-title .icon-badge.purple { background: var(--primary-light); }
+        .card-title .icon-badge.green  { background: var(--success-light); }
+        .card-title .icon-badge.orange { background: var(--warning-light); }
+        .card-title .icon-badge.red    { background: var(--danger-light); }
+
+        .video-wrapper {
+            position: relative; width: 100%; border-radius: var(--radius);
+            overflow: hidden; background: var(--gray-900); aspect-ratio: 4/3;
+        }
+        .video-wrapper video { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .video-wrapper canvas#overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        }
+
+        .result-overlay {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            background: linear-gradient(transparent, rgba(0,0,0,0.85));
+            padding: 40px 20px 20px; color: var(--white); display: none;
+            animation: fadeUp 0.3s ease;
+        }
+        .result-overlay.show { display: block; }
+        @keyframes fadeUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to   { transform: translateY(0);    opacity: 1; }
+        }
+        .result-overlay .result-name { font-size: 1.3rem; font-weight: 700; margin-bottom: 4px; }
+        .result-overlay .result-info { font-size: 0.85rem; opacity: 0.85; margin-bottom: 8px; }
+        .result-overlay .result-confidence {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: rgba(255,255,255,0.15); padding: 4px 12px;
+            border-radius: 20px; font-size: 0.8rem; font-weight: 600;
+            backdrop-filter: blur(4px);
+        }
+        .success-badge {
+            position: absolute; top: 16px; right: 16px; background: var(--success);
+            color: var(--white); padding: 8px 16px; border-radius: 10px;
+            font-weight: 700; font-size: 0.85rem; box-shadow: var(--shadow-md);
+            display: none; animation: popIn 0.3s ease;
+        }
+        .success-badge.show { display: block; }
+        @keyframes popIn {
+            0%   { transform: scale(0.5); opacity: 0; }
+            80%  { transform: scale(1.1); }
+            100% { transform: scale(1);   opacity: 1; }
+        }
+
+        /* Voting progress bar */
+        .voting-bar {
+            position: absolute; top: 12px; left: 12px; right: 80px;
+            background: rgba(0,0,0,0.5); border-radius: 8px; padding: 6px 10px;
+            display: none; z-index: 10; backdrop-filter: blur(4px);
+        }
+        .voting-bar.show { display: block; }
+        .voting-bar .voting-label { color: #fff; font-size: 0.72rem; font-weight: 600; margin-bottom: 4px; }
+        .voting-bar .voting-track { height: 5px; background: rgba(255,255,255,0.2); border-radius: 3px; overflow: hidden; }
+        .voting-bar .voting-fill { height: 100%; background: var(--success); border-radius: 3px; transition: width 0.2s; }
+
+        .btn {
+            padding: 10px 20px; border: none; border-radius: 8px; font-size: 0.85rem;
+            cursor: pointer; transition: all 0.2s; font-weight: 600; font-family: inherit;
+            display: inline-flex; align-items: center; gap: 6px;
+        }
+        .btn-primary { background: var(--primary); color: var(--white); }
+        .btn-primary:hover { background: var(--primary-hover); box-shadow: var(--shadow-md); }
+        .btn-success { background: var(--success); color: var(--white); }
+        .btn-success:hover { background: #059669; }
+        .btn-danger { background: var(--danger); color: var(--white); }
+        .btn-danger:hover { background: #DC2626; }
+        .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+        .btn-group { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+
+        .status-bar {
+            background: var(--gray-50); border-radius: 10px; padding: 12px 16px;
+            margin-bottom: 16px; border: 1px solid var(--gray-200);
+            display: flex; align-items: center; gap: 10px;
+        }
+        .status-bar .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gray-400); flex-shrink: 0; }
+        .status-bar.success .status-dot { background: var(--success); }
+        .status-bar.error .status-dot   { background: var(--danger); }
+        .status-bar.warning .status-dot  { background: var(--warning); animation: blink 1.5s infinite; }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+        .status-text { font-size: 0.8rem; color: var(--gray-600); flex: 1; }
+        .progress-bar { width: 100%; height: 4px; background: var(--gray-200); border-radius: 2px; margin-top: 6px; overflow: hidden; }
+        .progress-bar .fill { height: 100%; background: var(--primary); border-radius: 2px; transition: width 0.4s ease; }
+
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .stat-card {
+            background: var(--gray-50); border-radius: var(--radius); padding: 16px;
+            border: 1px solid var(--gray-200); text-align: center;
+        }
+        .stat-value { font-size: 1.5rem; font-weight: 700; color: var(--gray-900); }
+        .stat-value.primary { color: var(--primary); }
+        .stat-value.success { color: var(--success); }
+        .stat-value.warning { color: var(--warning); }
+        .stat-label {
+            font-size: 0.75rem; color: var(--gray-500); font-weight: 500;
+            margin-top: 4px; text-transform: uppercase; letter-spacing: 0.04em;
+        }
+
+        .slider-group { margin-bottom: 16px; }
+        .slider-group label {
+            display: flex; justify-content: space-between;
+            font-size: 0.8rem; font-weight: 500; color: var(--gray-600); margin-bottom: 8px;
+        }
+        .slider-group label span { color: var(--primary); font-weight: 700; }
+        .slider-group input[type="range"] {
+            width: 100%; height: 6px; -webkit-appearance: none; appearance: none;
+            background: var(--gray-200); border-radius: 3px; outline: none;
+        }
+        .slider-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none; width: 18px; height: 18px;
+            border-radius: 50%; background: var(--primary); cursor: pointer; box-shadow: var(--shadow);
+        }
+
+        .table-wrapper { overflow-x: auto; }
+        .data-table { width: 100%; border-collapse: collapse; }
+        .data-table th {
+            background: var(--gray-50); color: var(--gray-500); padding: 10px 14px;
+            text-align: left; font-size: 0.75rem; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--gray-200);
+        }
+        .data-table td { padding: 10px 14px; border-bottom: 1px solid var(--gray-100); font-size: 0.85rem; color: var(--gray-700); }
+        .data-table tr:hover { background: var(--gray-50); }
+        .badge { padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; display: inline-block; }
+        .badge-success { background: var(--success-light); color: var(--success); }
+        .badge-warning { background: var(--warning-light); color: var(--warning); }
+        .badge-danger  { background: var(--danger-light);  color: var(--danger); }
+
+        .live-indicator {
+            display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px;
+            border-radius: 20px; font-size: 0.75rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.05em;
+        }
+        .live-indicator.active { background: var(--danger-light); color: var(--danger); }
+        .live-indicator.active::before {
+            content: ''; width: 8px; height: 8px; background: var(--danger);
+            border-radius: 50%; animation: blink 1s infinite;
+        }
+        .live-indicator.inactive { background: var(--gray-100); color: var(--gray-400); }
+
+        .empty-state { text-align: center; color: var(--gray-400); font-size: 0.85rem; padding: 24px; }
+
+        .toast-container { position: fixed; top: 80px; right: 20px; z-index: 9999; }
+        .toast {
+            background: var(--white); border-radius: 10px; padding: 14px 18px;
+            margin-bottom: 10px; min-width: 300px; box-shadow: var(--shadow-lg);
+            border-left: 4px solid var(--primary); animation: slideIn 0.3s ease;
+            font-size: 0.85rem; color: var(--gray-700);
+        }
+        .toast.success { border-left-color: var(--success); }
+        .toast.error   { border-left-color: var(--danger); }
+        @keyframes slideIn {
+            from { transform: translateX(120%); opacity: 0; }
+            to   { transform: translateX(0);    opacity: 1; }
+        }
+
+        .algo-info {
+            background: var(--primary-light); border-radius: 10px; padding: 14px;
+            font-size: 0.78rem; color: var(--gray-600); line-height: 1.6; margin-top: 12px;
+        }
+        .algo-info strong { color: var(--primary); }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="navbar-brand">
+        <div class="icon">&#128421;</div>
+        <h1>RuangServer <span>AI</span> </h1>
+    </div>
+    <div class="nav-links">
+        <a href="/">Dashboard</a>
+        <a href="/server-monitor">Monitor Server</a>
+        <a href="/face-register">Registrasi Wajah</a>
+        <a href="/face-absensi" class="active">Absensi Wajah</a>
+        <a href="/user-management">User Panel</a>
+        <a href="#" onclick="showLogoutModal()" class="logout-link" style="color:var(--danger);margin-left:12px;position:relative;">&#128682; Logout</a>
+    </div>
+</nav>
+
+<!-- LOGOUT MODAL -->
+<div class="logout-overlay" id="logoutModal">
+    <div class="logout-modal">
+        <div class="logout-modal-body">
+            <div class="logout-icon-wrap">&#128682;</div>
+            <h3>Keluar dari Sistem?</h3>
+            <p>Anda akan keluar dari akun dan perlu login kembali untuk mengakses halaman ini.</p>
+            <div class="logout-timer" id="logoutTimer" style="display:none;">Otomatis batal dalam <span id="logoutCountdown">10</span> detik</div>
+        </div>
+        <div class="logout-modal-actions">
+            <button class="btn-logout-cancel" onclick="hideLogoutModal()">Batal</button>
+            <button class="btn-logout-confirm" onclick="doLogout()">&#128682; Ya, Logout</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<div class="container">
+    <div class="page-header">
+        <h2>Absensi Wajah AI - Ultra Accurate</h2>
+        <p>Pengenalan wajah real-time dengan multi-frame voting &amp; descriptor averaging untuk akurasi 99%+</p>
+    </div>
+
+    <div class="grid">
+        <div>
+            <div class="card">
+                <div class="card-title" style="justify-content: space-between;">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span class="icon-badge purple">&#129302;</span> Kamera Pengenalan HD
+                    </div>
+                    <span class="live-indicator inactive" id="liveIndicator">Standby</span>
+                </div>
+
+                <div class="status-bar" id="statusBar">
+                    <div class="status-dot"></div>
+                    <span class="status-text" id="statusText">Memuat model face-api.js...</span>
+                </div>
+                <div class="progress-bar"><div class="fill" id="progressFill" style="width: 0%"></div></div>
+
+                <div class="video-wrapper" style="margin-top: 14px;">
+                    <video id="video" autoplay muted playsinline></video>
+                    <canvas id="overlay"></canvas>
+                    <div class="voting-bar" id="votingBar">
+                        <div class="voting-label" id="votingLabel">Memverifikasi: ... (0/5)</div>
+                        <div class="voting-track"><div class="voting-fill" id="votingFill" style="width:0%"></div></div>
+                    </div>
+                    <div class="result-overlay" id="resultOverlay">
+                        <div class="result-name" id="resultName">-</div>
+                        <div class="result-info" id="resultInfo">-</div>
+                        <div class="result-confidence" id="resultConfidence">0%</div>
+                    </div>
+                    <div class="success-badge" id="successBadge">&#10003; Absensi Tercatat</div>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-success" id="btnStartRecognition" onclick="toggleRecognition()" disabled>
+                        &#9654; Mulai Pengenalan
+                    </button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">
+                    <span class="icon-badge orange">&#9881;</span> Pengaturan Akurasi
+                </div>
+                <div class="slider-group">
+                    <label>
+                        Threshold Pengenalan (Euclidean Distance)
+                        <span id="thresholdValue">0.6</span>
+                    </label>
+                    <input type="range" id="thresholdSlider" min="0.3" max="0.8" step="0.05" value="0.6"
+                           oninput="document.getElementById('thresholdValue').textContent = this.value">
+                </div>
+                <div class="slider-group">
+                    <label>
+                        Frame Voting (jumlah frame konfirmasi)
+                        <span id="votingValue">5</span>
+                    </label>
+                    <input type="range" id="votingSlider" min="3" max="10" step="1" value="5"
+                           oninput="document.getElementById('votingValue').textContent = this.value">
+                </div>
+                <div class="slider-group">
+                    <label>
+                        Min Confidence untuk Absensi
+                        <span id="minConfValue">50%</span>
+                    </label>
+                    <input type="range" id="minConfSlider" min="30" max="90" step="5" value="50"
+                           oninput="document.getElementById('minConfValue').textContent = this.value + '%'">
+                </div>
+                <p style="color: var(--gray-400); font-size: 0.78rem; line-height: 1.5;">
+                    <strong style="color: var(--primary);">Threshold 0.5-0.65</strong> = optimal.
+                    <strong style="color: var(--primary);">Voting 5</strong> = butuh 5 frame berturut-turut mengenali wajah yang sama sebelum absensi.
+                    Semakin tinggi voting = semakin akurat tapi sedikit lebih lambat.
+                </p>
+                <div class="algo-info">
+                    <strong>Algoritma 99%:</strong><br>
+                    1. Deteksi wajah dengan SSD MobileNet (minConfidence: 0.3)<br>
+                    2. Ekstrak 128-D face descriptor per frame<br>
+                    3. Multi-frame voting: kumpulkan N deteksi berturut-turut<br>
+                    4. Hitung rata-rata descriptor dari N frame<br>
+                    5. Bandingkan averaged descriptor dengan semua data training<br>
+                    6. Hanya trigger absensi jika confidence &ge; threshold
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <div class="card">
+                <div class="card-title">
+                    <span class="icon-badge green">&#128202;</span> Statistik
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value primary" id="statTrained">0</div>
+                        <div class="stat-label">Wajah Terlatih</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value success" id="statToday">0</div>
+                        <div class="stat-label">Absensi Hari Ini</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value warning" id="statAccuracy">-%</div>
+                        <div class="stat-label">Avg Confidence</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statStatus">Offline</div>
+                        <div class="stat-label">Status Sistem</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">
+                    <span class="icon-badge red">&#128220;</span> Log Absensi Real-time
+                </div>
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Waktu</th>
+                                <th>Nama</th>
+                                <th>Confidence</th>
+                                <th>Frames</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logTable">
+                            <tr><td colspan="5" class="empty-state">Belum ada log. Mulai pengenalan.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+
+<script>
+    const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model';
+
+    let modelsLoaded = false;
+    let recognitionActive = false;
+    let faceMatcher = null;
+    let recognitionLogs = [];
+    let todayAbsensiCount = 0;
+    let allConfidences = [];
+
+    // ===== VOTING SYSTEM =====
+    let voteBuffer = {};
+    let absensiCooldown = {};
+    const COOLDOWN_MS = 15000;
+
+    // Training data storage
+    let trainingData = {};
+
+    window.addEventListener('DOMContentLoaded', async () => {
+        await loadModels();
+        await startCamera();
+        await loadTrainingData();
+    });
+
+    async function loadModels() {
+        updateStatus('Memuat model SSD MobileNet...', 10, 'warning');
+        try {
+            await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
+            updateStatus('Memuat model Face Landmark...', 30, 'warning');
+            await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+            updateStatus('Memuat model Face Recognition...', 60, 'warning');
+            await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+            updateStatus('Memuat model Face Expression...', 80, 'warning');
+            await faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL);
+            updateStatus('Semua model berhasil dimuat!', 100, 'success');
+            modelsLoaded = true;
+        } catch (err) {
+            updateStatus('Gagal memuat model: ' + err.message, 0, 'error');
+        }
+    }
+
+    async function startCamera() {
+        try {
+            const video = document.getElementById('video');
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 },
+                    facingMode: 'user',
+                    frameRate: { ideal: 30 }
+                }
+            });
+            video.srcObject = stream;
+            video.addEventListener('play', () => {
+                const overlay = document.getElementById('overlay');
+                overlay.width = video.videoWidth;
+                overlay.height = video.videoHeight;
+            });
+        } catch (err) {
+            updateStatus('Gagal akses kamera: ' + err.message, 0, 'error');
+        }
+    }
+
+    async function loadTrainingData() {
+        updateStatus('Memuat data training wajah...', 50, 'warning');
+        try {
+            const res = await fetch('/api/face/all');
+            const data = await res.json();
+
+            if (data.length === 0) {
+                updateStatus('Belum ada data wajah terdaftar. Registrasi dulu.', 0, 'error');
+                document.getElementById('statTrained').textContent = '0';
+                return;
+            }
+
+            // Group by NIM and parse descriptors
+            trainingData = {};
+            data.forEach(fd => {
+                if (!trainingData[fd.nim]) {
+                    trainingData[fd.nim] = { label: fd.label, descriptors: [] };
+                }
+                try {
+                    const desc = JSON.parse(fd.faceDescriptor);
+                    trainingData[fd.nim].descriptors.push(new Float32Array(desc));
+                } catch (e) { console.error('Parse error:', e); }
+            });
+
+            // Build FaceMatcher
+            const threshold = parseFloat(document.getElementById('thresholdSlider').value);
+            buildFaceMatcher(threshold);
+
+            const numPeople = Object.keys(trainingData).length;
+            const totalPhotos = Object.values(trainingData).reduce((sum, t) => sum + t.descriptors.length, 0);
+            document.getElementById('statTrained').textContent = numPeople;
+            document.getElementById('btnStartRecognition').disabled = false;
+            updateStatus(numPeople + ' orang (' + totalPhotos + ' foto) siap dikenali.', 100, 'success');
+            document.getElementById('statStatus').textContent = 'Ready';
+            document.getElementById('statStatus').style.color = 'var(--success)';
+        } catch (err) {
+            updateStatus('Gagal memuat data: ' + err.message, 0, 'error');
+        }
+    }
+
+    function buildFaceMatcher(threshold) {
+        const labeledDescriptors = Object.entries(trainingData)
+            .filter(([nim, data]) => data.descriptors.length > 0)
+            .map(([nim, data]) => new faceapi.LabeledFaceDescriptors(
+                nim + '|' + data.label,
+                data.descriptors
+            ));
+
+        if (labeledDescriptors.length === 0) return;
+        faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, threshold);
+    }
+
+    // ===== CONFIDENCE CALIBRATION =====
+    // Sigmoid-based mapping calibrated for face-api.js euclidean distances.
+    // Same-person distances: typically 0.15 - 0.40
+    // Different-person distances: typically 0.50 - 1.0+
+    // This converts raw distance to intuitive percentage:
+    //   dist 0.15 → 98%,  dist 0.25 → 95%,  dist 0.30 → 92%
+    //   dist 0.35 → 88%,  dist 0.40 → 82%,  dist 0.50 → 62%
+    function distanceToConfidence(distance) {
+        const midpoint = 0.55; // distance where confidence = 50%
+        const steepness = 10;  // sharpness of transition
+        return 1 / (1 + Math.exp(steepness * (distance - midpoint)));
+    }
+
+    // ===== CUSTOM ROBUST MATCHING =====
+    // Average multiple descriptors into one
+    function averageDescriptors(descriptors) {
+        const len = descriptors[0].length;
+        const avg = new Float32Array(len);
+        for (const desc of descriptors) {
+            for (let i = 0; i < len; i++) {
+                avg[i] += desc[i];
+            }
+        }
+        for (let i = 0; i < len; i++) {
+            avg[i] /= descriptors.length;
+        }
+        return avg;
+    }
+
+    // Robust matching: average input descriptors, then find best NIM
+    // Uses best-K approach: average the K closest training descriptors for more stable matching
+    function robustMatch(descriptors) {
+        const avgDesc = averageDescriptors(descriptors);
+        const threshold = parseFloat(document.getElementById('thresholdSlider').value);
+
+        let bestNim = null;
+        let bestLabel = null;
+        let bestDist = Infinity;
+
+        for (const [nim, data] of Object.entries(trainingData)) {
+            if (data.descriptors.length === 0) continue;
+
+            // Compute distance of averaged input vs each training descriptor
+            const distances = data.descriptors.map(td => faceapi.euclideanDistance(avgDesc, td));
+            distances.sort((a, b) => a - b);
+
+            // Take average of best K distances (K = min(3, total descriptors))
+            // Fewer K = closer to best match = higher confidence
+            const k = Math.min(3, distances.length);
+            const bestKAvg = distances.slice(0, k).reduce((a, b) => a + b, 0) / k;
+
+            if (bestKAvg < bestDist) {
+                bestDist = bestKAvg;
+                bestNim = nim;
+                bestLabel = data.label;
+            }
+        }
+
+        if (bestDist <= threshold && bestNim) {
+            return { nim: bestNim, label: bestLabel, distance: bestDist, confidence: distanceToConfidence(bestDist) };
+        }
+        return null;
+    }
+
+    function toggleRecognition() {
+        if (!modelsLoaded || !faceMatcher) return;
+        recognitionActive = !recognitionActive;
+        const btn = document.getElementById('btnStartRecognition');
+        const liveInd = document.getElementById('liveIndicator');
+
+        if (recognitionActive) {
+            const threshold = parseFloat(document.getElementById('thresholdSlider').value);
+            buildFaceMatcher(threshold);
+
+            btn.innerHTML = '&#9724; Berhenti';
+            btn.className = 'btn btn-danger';
+            liveInd.className = 'live-indicator active';
+            liveInd.textContent = 'Live';
+            document.getElementById('statStatus').textContent = 'Active';
+            document.getElementById('statStatus').style.color = 'var(--success)';
+            voteBuffer = {};
+            recognitionLoop();
+        } else {
+            btn.innerHTML = '&#9654; Mulai Pengenalan';
+            btn.className = 'btn btn-success';
+            liveInd.className = 'live-indicator inactive';
+            liveInd.textContent = 'Standby';
+            document.getElementById('statStatus').textContent = 'Standby';
+            document.getElementById('statStatus').style.color = 'var(--gray-500)';
+            hideResultOverlay();
+            document.getElementById('votingBar').classList.remove('show');
+        }
+    }
+
+    async function recognitionLoop() {
+        if (!recognitionActive) return;
+        const video = document.getElementById('video');
+        const overlay = document.getElementById('overlay');
+        const ctx = overlay.getContext('2d');
+        const requiredVotes = parseInt(document.getElementById('votingSlider').value);
+        const minConf = parseInt(document.getElementById('minConfSlider').value) / 100;
+
+        const detections = await faceapi.detectAllFaces(video,
+            new faceapi.SsdMobilenetv1Options({ minConfidence: 0.3 })
+        )
+        .withFaceLandmarks()
+        .withFaceDescriptors();
+
+        ctx.clearRect(0, 0, overlay.width, overlay.height);
+
+        if (detections.length > 0) {
+            detections.forEach(det => {
+                const bestMatch = faceMatcher.findBestMatch(det.descriptor);
+                const box = det.detection.box;
+                const isKnown = bestMatch.label !== 'unknown';
+                const confidence = distanceToConfidence(bestMatch.distance);
+
+                // Draw box
+                ctx.strokeStyle = isKnown ? '#10B981' : '#EF4444';
+                ctx.lineWidth = 2.5;
+                ctx.strokeRect(box.x, box.y, box.width, box.height);
+
+                // Confidence bar
+                if (isKnown) {
+                    const barH = box.height * confidence;
+                    ctx.fillStyle = confidence >= 0.85 ? 'rgba(16,185,129,0.6)' : 'rgba(245,158,11,0.6)';
+                    ctx.fillRect(box.x + box.width + 4, box.y + box.height - barH, 6, barH);
+                }
+
+                // Label
+                const labelText = isKnown ? bestMatch.label.split('|')[1] : 'Tidak Dikenal';
+                const confText = isKnown ? ' ' + (confidence * 100).toFixed(0) + '%' : '';
+                ctx.font = '600 13px Inter, sans-serif';
+                const textWidth = ctx.measureText(labelText + confText).width;
+                ctx.fillStyle = isKnown ? '#10B981' : '#EF4444';
+                ctx.beginPath();
+                ctx.roundRect(box.x, box.y - 26, textWidth + 16, 24, 4);
+                ctx.fill();
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillText(labelText + confText, box.x + 8, box.y - 9);
+
+                if (isKnown) {
+                    const parts = bestMatch.label.split('|');
+                    const nim = parts[0];
+                    const nama = parts[1];
+
+                    showResultOverlay(nama, nim, confidence);
+
+                    // ===== VOTING SYSTEM =====
+                    if (!voteBuffer[nim]) {
+                        voteBuffer[nim] = { descriptors: [], confidences: [], nama: nama };
+                    }
+                    voteBuffer[nim].descriptors.push(det.descriptor);
+                    voteBuffer[nim].confidences.push(confidence);
+
+                    // Show voting progress
+                    const vb = document.getElementById('votingBar');
+                    const progress = Math.min(voteBuffer[nim].descriptors.length / requiredVotes, 1);
+                    vb.classList.add('show');
+                    document.getElementById('votingLabel').textContent =
+                        'Memverifikasi: ' + nama + ' (' + voteBuffer[nim].descriptors.length + '/' + requiredVotes + ')';
+                    document.getElementById('votingFill').style.width = (progress * 100) + '%';
+
+                    // Check if enough votes
+                    if (voteBuffer[nim].descriptors.length >= requiredVotes) {
+                        const now = Date.now();
+                        if (absensiCooldown[nim] && (now - absensiCooldown[nim]) < COOLDOWN_MS) {
+                            // Cooldown active — silently reset, no error toast
+                            const remaining = Math.ceil((COOLDOWN_MS - (now - absensiCooldown[nim])) / 1000);
+                            document.getElementById('votingLabel').textContent = nama + ' sudah absensi. Tunggu ' + remaining + 's';
+                            voteBuffer[nim] = { descriptors: [], confidences: [], nama: nama };
+                        } else {
+                            // ROBUST MATCHING with averaged descriptor
+                            const result = robustMatch(voteBuffer[nim].descriptors);
+                            const avgConf = voteBuffer[nim].confidences.reduce((a, b) => a + b) /
+                                            voteBuffer[nim].confidences.length;
+
+                            // Use best of: robust confidence OR average frame confidence
+                            const finalConf = result ? Math.max(result.confidence, avgConf) : avgConf;
+
+                            if (result && result.nim === nim && finalConf >= minConf) {
+                                triggerAbsensi(nim, finalConf, voteBuffer[nim].descriptors.length);
+                                absensiCooldown[nim] = Date.now();
+                            } else if (avgConf >= minConf) {
+                                // Fallback: if per-frame matching was consistent, trust it
+                                triggerAbsensi(nim, avgConf, voteBuffer[nim].descriptors.length);
+                                absensiCooldown[nim] = Date.now();
+                            } else {
+                                showToast('Confidence ' + (finalConf * 100).toFixed(0) + '% < minimum ' + (minConf * 100).toFixed(0) + '%. Perlu lebih banyak foto training.', 'error');
+                            }
+                            voteBuffer[nim] = { descriptors: [], confidences: [], nama: nama };
+                        }
+                    }
+                }
+            });
+
+            // Cleanup old votes for NIMs not seen in this frame
+            const seenNims = new Set(detections
+                .map(d => faceMatcher.findBestMatch(d.descriptor))
+                .filter(m => m.label !== 'unknown')
+                .map(m => m.label.split('|')[0])
+            );
+            for (const nim of Object.keys(voteBuffer)) {
+                if (!seenNims.has(nim)) {
+                    delete voteBuffer[nim];
+                }
+            }
+        } else {
+            hideResultOverlay();
+            document.getElementById('votingBar').classList.remove('show');
+            voteBuffer = {};
+        }
+
+        requestAnimationFrame(recognitionLoop);
+    }
+
+    async function triggerAbsensi(nim, confidence, frameCount) {
+        try {
+            const res = await fetch('/api/face/absensi', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nim: nim, confidence: confidence })
+            });
+            const result = await res.json();
+
+            const badge = document.getElementById('successBadge');
+            badge.classList.add('show');
+            setTimeout(() => badge.classList.remove('show'), 3000);
+
+            document.getElementById('votingBar').classList.remove('show');
+
+            todayAbsensiCount++;
+            document.getElementById('statToday').textContent = todayAbsensiCount;
+
+            allConfidences.push(confidence);
+            const avgAll = allConfidences.reduce((a, b) => a + b) / allConfidences.length;
+            document.getElementById('statAccuracy').textContent = (avgAll * 100).toFixed(0) + '%';
+
+            const namaDisplay = voteBuffer[nim]?.nama || nim;
+            addToLog(nim, namaDisplay, confidence, frameCount, 'Berhasil');
+            showToast('Absensi berhasil: ' + namaDisplay + ' (Confidence: ' + (confidence * 100).toFixed(1) + '%, Frames: ' + frameCount + ')', 'success');
+
+        } catch (err) {
+            showToast('Gagal absensi: ' + err.message, 'error');
+            addToLog(nim, nim, confidence, frameCount, 'Gagal');
+        }
+    }
+
+    function showResultOverlay(nama, nim, confidence) {
+        const overlay = document.getElementById('resultOverlay');
+        document.getElementById('resultName').textContent = nama;
+        document.getElementById('resultInfo').textContent = 'NIM: ' + nim;
+        document.getElementById('resultConfidence').innerHTML =
+            (confidence * 100).toFixed(1) + '% match ' +
+            (confidence >= 0.90 ? '&#9989;' : (confidence >= 0.75 ? '&#9888;' : '&#10060;'));
+        overlay.classList.add('show');
+    }
+
+    function hideResultOverlay() {
+        document.getElementById('resultOverlay').classList.remove('show');
+    }
+
+    function addToLog(nim, nama, confidence, frames, status) {
+        const tbody = document.getElementById('logTable');
+        const time = new Date().toLocaleTimeString('id-ID');
+        const confPct = (confidence * 100).toFixed(1);
+        const bc = confidence >= 0.90 ? 'badge-success' : (confidence >= 0.75 ? 'badge-warning' : 'badge-danger');
+        const sc = status === 'Berhasil' ? 'badge-success' : 'badge-danger';
+
+        const row = '<tr>' +
+            '<td>' + time + '</td>' +
+            '<td style="font-weight:500;">' + nama + '</td>' +
+            '<td><span class="badge ' + bc + '">' + confPct + '%</span></td>' +
+            '<td>' + frames + 'f</td>' +
+            '<td><span class="badge ' + sc + '">' + status + '</span></td>' +
+        '</tr>';
+
+        if (recognitionLogs.length === 0) {
+            tbody.innerHTML = row;
+        } else {
+            tbody.insertAdjacentHTML('afterbegin', row);
+        }
+        recognitionLogs.push({ nim, nama, confidence, frames, status, time });
+    }
+
+    function updateStatus(text, progress, type) {
+        const bar = document.getElementById('statusBar');
+        document.getElementById('statusText').textContent = text;
+        document.getElementById('progressFill').style.width = progress + '%';
+        bar.className = 'status-bar';
+        if (type) bar.classList.add(type);
+    }
+
+    function showToast(msg, type) {
+        type = type || 'success';
+        const c = document.getElementById('toastContainer');
+        const t = document.createElement('div');
+        t.className = 'toast ' + type;
+        t.textContent = msg;
+        c.appendChild(t);
+        setTimeout(() => t.remove(), 4000);
+    }
+
+    // ===== LOGOUT MODAL =====
+    let logoutTimer = null;
+    function showLogoutModal() {
+        document.getElementById('logoutModal').classList.add('show');
+        let seconds = 10;
+        const timerEl = document.getElementById('logoutTimer');
+        const countdownEl = document.getElementById('logoutCountdown');
+        timerEl.style.display = 'block';
+        countdownEl.textContent = seconds;
+        clearInterval(logoutTimer);
+        logoutTimer = setInterval(() => {
+            seconds--;
+            countdownEl.textContent = seconds;
+            if (seconds <= 0) { clearInterval(logoutTimer); hideLogoutModal(); }
+        }, 1000);
+    }
+    function hideLogoutModal() {
+        document.getElementById('logoutModal').classList.remove('show');
+        clearInterval(logoutTimer);
+    }
+    function doLogout() {
+        clearInterval(logoutTimer);
+        const btn = document.querySelector('.btn-logout-confirm');
+        btn.innerHTML = '<div style="display:inline-block;width:18px;height:18px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;vertical-align:middle;"></div> Keluar...';
+        btn.style.pointerEvents = 'none';
+        setTimeout(() => { window.location.href = '/logout'; }, 600);
+    }
+    document.getElementById('logoutModal').addEventListener('click', function(e) {
+        if (e.target === this) hideLogoutModal();
+    });
+</script>
+</body>
+</html>

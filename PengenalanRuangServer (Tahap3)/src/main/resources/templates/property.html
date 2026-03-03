@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real Estate Listing</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background-color: #f8f8f8; color: #1a1a1a; min-height: 100vh; }
+
+        .sidebar { position: fixed; left: 0; top: 0; width: 260px; height: 100vh; background: #0a0a0a; color: #ffffff; z-index: 100; display: flex; flex-direction: column; }
+        .sidebar-header { padding: 28px 24px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+        .sidebar-header .logo { display: flex; align-items: center; gap: 12px; }
+        .sidebar-header .logo-icon { width: 40px; height: 40px; background: #ffffff; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        .sidebar-header .logo-text { font-size: 16px; font-weight: 700; }
+        .sidebar-header .logo-sub { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 2px; }
+        .sidebar-nav { padding: 16px 12px; flex: 1; }
+        .nav-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: rgba(255,255,255,0.35); padding: 8px 12px; margin-top: 8px; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-radius: 8px; color: rgba(255,255,255,0.6); text-decoration: none; font-size: 14px; font-weight: 500; transition: all 0.2s; cursor: pointer; margin-bottom: 2px; }
+        .nav-item:hover { background: rgba(255,255,255,0.08); color: #ffffff; }
+        .nav-item.active { background: #ffffff; color: #0a0a0a; }
+        .nav-item .nav-icon { width: 20px; text-align: center; font-size: 16px; }
+        .sidebar-footer { padding: 20px 24px; border-top: 1px solid rgba(255,255,255,0.08); }
+        .sidebar-footer .version { font-size: 11px; color: rgba(255,255,255,0.3); }
+
+        .main-content { margin-left: 260px; min-height: 100vh; }
+        .topbar { background: #ffffff; border-bottom: 1px solid #e5e5e5; padding: 0 36px; height: 64px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+        .topbar h1 { font-size: 20px; font-weight: 700; color: #0a0a0a; }
+        .topbar .breadcrumb { font-size: 13px; color: #999; margin-left: 12px; }
+        .page-content { padding: 28px 36px; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 28px; }
+        .stat-card { background: #ffffff; border: 1px solid #e5e5e5; border-radius: 14px; padding: 24px; transition: all 0.3s ease; }
+        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,0,0,0.08); }
+        .stat-card.dark { background: #0a0a0a; border-color: #0a0a0a; color: #ffffff; }
+        .stat-card .stat-icon { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; background: #f5f5f5; margin-bottom: 16px; }
+        .stat-card.dark .stat-icon { background: rgba(255,255,255,0.1); }
+        .stat-card .stat-value { font-size: 32px; font-weight: 800; letter-spacing: -1px; margin-bottom: 4px; }
+        .stat-card .stat-label { font-size: 13px; color: #888; font-weight: 500; }
+        .stat-card.dark .stat-label { color: rgba(255,255,255,0.5); }
+
+        .panel { background: #ffffff; border: 1px solid #e5e5e5; border-radius: 14px; overflow: hidden; margin-bottom: 20px; }
+        .panel-header { padding: 20px 24px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; justify-content: space-between; }
+        .panel-header h2 { font-size: 15px; font-weight: 700; color: #0a0a0a; }
+        .btn { padding: 7px 14px; border-radius: 7px; font-size: 12px; font-weight: 600; border: 1px solid #e5e5e5; background: #fff; color: #333; cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif; }
+        .btn:hover { background: #f5f5f5; }
+        .btn-dark { background: #0a0a0a; color: #fff; border-color: #0a0a0a; }
+        .btn-dark:hover { background: #222; }
+
+        /* Property Cards Grid */
+        .property-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 20px; padding: 24px; }
+        .property-card { background: #fff; border: 1px solid #e5e5e5; border-radius: 14px; overflow: hidden; transition: all 0.3s; }
+        .property-card:hover { transform: translateY(-3px); box-shadow: 0 12px 40px rgba(0,0,0,0.1); }
+        .property-img { width: 100%; height: 200px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; font-size: 48px; position: relative; }
+        .property-img .status-badge { position: absolute; top: 12px; right: 12px; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+        .status-tersedia { background: #22c55e; color: #fff; }
+        .status-terjual { background: #ef4444; color: #fff; }
+        .status-disewa { background: #f59e0b; color: #fff; }
+        .property-body { padding: 20px; }
+        .property-title { font-size: 16px; font-weight: 700; color: #0a0a0a; margin-bottom: 6px; }
+        .property-location { font-size: 13px; color: #888; margin-bottom: 12px; display: flex; align-items: center; gap: 4px; }
+        .property-price { font-size: 22px; font-weight: 800; color: #0a0a0a; margin-bottom: 12px; }
+        .property-specs { display: flex; gap: 16px; margin-bottom: 16px; }
+        .spec-item { display: flex; align-items: center; gap: 4px; font-size: 12px; color: #666; font-weight: 500; }
+        .property-type { display: inline-block; padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; background: #f0f0f0; color: #333; margin-bottom: 12px; }
+        .property-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 14px; border-top: 1px solid #f0f0f0; }
+        .property-owner { font-size: 12px; color: #888; }
+        .property-actions { display: flex; gap: 6px; }
+
+        .btn-edit { padding: 5px 12px; border-radius: 6px; border: 1px solid #0a0a0a; background: #fff; color: #0a0a0a; font-size: 12px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.2s; }
+        .btn-edit:hover { background: #0a0a0a; color: #fff; }
+        .btn-danger { padding: 5px 12px; border-radius: 6px; border: 1px solid #ef4444; background: #fff; color: #ef4444; font-size: 12px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.2s; }
+        .btn-danger:hover { background: #ef4444; color: #fff; }
+
+        .search-box { display: flex; align-items: center; gap: 8px; background: #f5f5f5; border: 1px solid #e5e5e5; border-radius: 8px; padding: 8px 14px; width: 280px; }
+        .search-box input { border: none; background: none; outline: none; font-size: 13px; color: #1a1a1a; width: 100%; font-family: 'Inter', sans-serif; }
+        .search-box input::placeholder { color: #aaa; }
+
+        .filter-group { display: flex; gap: 8px; align-items: center; }
+        .filter-select { padding: 7px 12px; border-radius: 7px; font-size: 12px; font-weight: 500; border: 1px solid #e5e5e5; background: #fff; color: #333; cursor: pointer; font-family: 'Inter', sans-serif; outline: none; }
+
+        /* Modal */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-overlay.show { display: flex; }
+        .modal { background: #ffffff; border-radius: 16px; width: 580px; max-width: 90vw; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: fadeInUp 0.3s ease; }
+        .modal-header { padding: 20px 24px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; justify-content: space-between; }
+        .modal-header h3 { font-size: 16px; font-weight: 700; }
+        .modal-close { width: 32px; height: 32px; border-radius: 8px; border: none; background: #f5f5f5; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; }
+        .modal-close:hover { background: #e0e0e0; }
+        .modal-body { padding: 24px; }
+        .modal-footer { padding: 16px 24px; border-top: 1px solid #f0f0f0; display: flex; gap: 10px; justify-content: flex-end; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 12px; font-weight: 600; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 14px; border: 2px solid #e5e5e5; border-radius: 8px; font-size: 14px; font-family: 'Inter', sans-serif; outline: none; transition: border-color 0.2s; background: #fff; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #0a0a0a; }
+        .form-group textarea { resize: vertical; min-height: 80px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .btn-cancel { padding: 10px 20px; border-radius: 8px; border: 1px solid #e5e5e5; background: #fff; color: #666; font-size: 13px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; }
+        .btn-submit { padding: 10px 20px; border-radius: 8px; border: none; background: #0a0a0a; color: #fff; font-size: 13px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; }
+        .btn-submit:hover { background: #333; }
+
+        .toast { position: fixed; top: 20px; right: 20px; padding: 14px 20px; border-radius: 10px; font-size: 13px; font-weight: 600; z-index: 2000; box-shadow: 0 8px 30px rgba(0,0,0,0.15); }
+        .toast.success { background: #0a0a0a; color: #fff; }
+        .toast.error { background: #ef4444; color: #fff; }
+
+        .empty-state { padding: 60px 24px; text-align: center; }
+        .empty-state .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.3; }
+        .empty-state h3 { font-size: 16px; font-weight: 600; color: #666; margin-bottom: 8px; }
+        .empty-state p { font-size: 13px; color: #aaa; }
+
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-in { animation: fadeInUp 0.4s ease forwards; }
+        .delay-1 { animation-delay: 0.05s; } .delay-2 { animation-delay: 0.1s; } .delay-3 { animation-delay: 0.15s; } .delay-4 { animation-delay: 0.2s; }
+
+        .page-footer { padding: 24px 36px; text-align: center; font-size: 12px; color: #bbb; border-top: 1px solid #f0f0f0; margin-top: 20px; }
+
+        @media (max-width: 1200px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } .property-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 768px) { .sidebar { display: none; } .main-content { margin-left: 0; } .stats-grid { grid-template-columns: 1fr; } .page-content { padding: 20px 16px; } .topbar { padding: 0 16px; } .form-row { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon">&#128421;</div>
+                <div>
+                    <div class="logo-text">RuangServer</div>
+                    <div class="logo-sub">Monitoring System</div>
+                </div>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-label">Menu Utama</div>
+            <a class="nav-item" href="/"><span class="nav-icon">&#9632;</span><span>Dashboard</span></a>
+            <div class="nav-label" style="margin-top:24px;">Server Monitoring</div>
+            <a class="nav-item" href="/server-monitor"><span class="nav-icon">&#128421;</span><span>Monitor Server</span></a>
+            <a class="nav-item" href="/server-monitor-register"><span class="nav-icon">&#128100;</span><span>Registrasi Server</span></a>
+            <a class="nav-item" href="/user-management"><span class="nav-icon">&#128101;</span><span>User Panel</span></a>
+            <div class="nav-label" style="margin-top:24px;">Fitur Lainnya</div>
+            <a class="nav-item active" href="/property"><span class="nav-icon">&#127968;</span><span>Real Estate</span></a>
+            <a class="nav-item" href="/project"><span class="nav-icon">&#128203;</span><span>Project Management</span></a>
+            <a class="nav-item" href="/chatbot"><span class="nav-icon">&#129302;</span><span>Chatbot</span></a>
+            <a class="nav-item" href="/music"><span class="nav-icon">&#127925;</span><span>Music Streaming</span></a>
+            <a class="nav-item" href="/expense"><span class="nav-icon">&#128176;</span><span>Expense Report</span></a>
+            <a class="nav-item" href="/language"><span class="nav-icon">&#127760;</span><span>Language Learning</span></a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="version">RuangServer v3.0</div>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+        <header class="topbar">
+            <div style="display:flex;align-items:center;">
+                <h1>Real Estate Listing</h1>
+                <span class="breadcrumb">/ Daftar Properti</span>
+            </div>
+            <div style="display:flex;gap:12px;align-items:center;">
+                <div class="search-box">
+                    <span>&#128269;</span>
+                    <input type="text" id="searchProperty" placeholder="Cari properti..." onkeyup="filterProperties()">
+                </div>
+            </div>
+        </header>
+
+        <div class="page-content">
+            <!-- STAT CARDS -->
+            <div class="stats-grid">
+                <div class="stat-card dark animate-in delay-1">
+                    <div class="stat-icon">&#127968;</div>
+                    <div class="stat-value" id="statTotal" th:text="${totalProperty} ?: '0'">0</div>
+                    <div class="stat-label">Total Properti</div>
+                </div>
+                <div class="stat-card animate-in delay-2">
+                    <div class="stat-icon">&#9989;</div>
+                    <div class="stat-value" id="statTersedia" th:text="${totalTersedia} ?: '0'">0</div>
+                    <div class="stat-label">Tersedia</div>
+                </div>
+                <div class="stat-card animate-in delay-3">
+                    <div class="stat-icon">&#128176;</div>
+                    <div class="stat-value" id="statTerjual" th:text="${totalTerjual} ?: '0'">0</div>
+                    <div class="stat-label">Terjual</div>
+                </div>
+                <div class="stat-card animate-in delay-4">
+                    <div class="stat-icon">&#128337;</div>
+                    <div class="stat-value" id="currentTime" style="font-size:26px;">--:--</div>
+                    <div class="stat-label" id="currentDate">Memuat...</div>
+                </div>
+            </div>
+
+            <!-- FILTER + ADD -->
+            <div class="panel animate-in delay-2">
+                <div class="panel-header">
+                    <h2>&#127968; Daftar Properti</h2>
+                    <div style="display:flex;gap:10px;align-items:center;">
+                        <div class="filter-group">
+                            <select class="filter-select" id="filterTipe" onchange="filterProperties()">
+                                <option value="">Semua Tipe</option>
+                                <option value="Rumah">Rumah</option>
+                                <option value="Apartemen">Apartemen</option>
+                                <option value="Ruko">Ruko</option>
+                                <option value="Tanah">Tanah</option>
+                                <option value="Kos">Kos</option>
+                            </select>
+                            <select class="filter-select" id="filterStatus" onchange="filterProperties()">
+                                <option value="">Semua Status</option>
+                                <option value="Tersedia">Tersedia</option>
+                                <option value="Terjual">Terjual</option>
+                                <option value="Disewa">Disewa</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-dark" onclick="openAddModal()">&#10010; Tambah Properti</button>
+                    </div>
+                </div>
+
+                <div class="property-grid" id="propertyGrid">
+                    <!-- Properties loaded by JS -->
+                </div>
+                <div id="emptyState" class="empty-state" style="display:none;">
+                    <div class="empty-icon">&#127968;</div>
+                    <h3>Belum Ada Properti</h3>
+                    <p>Klik tombol "Tambah Properti" untuk menambahkan listing baru.</p>
+                </div>
+            </div>
+        </div>
+
+        <footer class="page-footer">&copy; 2026 RuangServer Monitoring System &mdash; Real Estate Module</footer>
+    </div>
+
+    <!-- MODAL TAMBAH/EDIT PROPERTI -->
+    <div class="modal-overlay" id="modalProperty">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modalPropertyTitle">&#10010; Tambah Properti</h3>
+                <button class="modal-close" onclick="closeModal('modalProperty')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="formIdProperty" value="0">
+                <div class="form-group">
+                    <label>Judul Properti</label>
+                    <input type="text" id="formJudul" placeholder="Contoh: Rumah Mewah di Jakarta Selatan">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Tipe Properti</label>
+                        <select id="formTipe">
+                            <option value="Rumah">Rumah</option>
+                            <option value="Apartemen">Apartemen</option>
+                            <option value="Ruko">Ruko</option>
+                            <option value="Tanah">Tanah</option>
+                            <option value="Kos">Kos</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Harga (Rp)</label>
+                        <input type="number" id="formHarga" placeholder="500000000">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Luas Tanah (m&sup2;)</label>
+                        <input type="number" id="formLuasTanah" placeholder="100">
+                    </div>
+                    <div class="form-group">
+                        <label>Luas Bangunan (m&sup2;)</label>
+                        <input type="number" id="formLuasBangunan" placeholder="80">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Jumlah Kamar</label>
+                        <input type="number" id="formKamar" placeholder="3" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Jumlah Kamar Mandi</label>
+                        <input type="number" id="formKamarMandi" placeholder="2" min="0">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Alamat Lengkap</label>
+                    <textarea id="formAlamat" placeholder="Jl. Sudirman No. 123"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Kota</label>
+                        <input type="text" id="formKota" placeholder="Jakarta">
+                    </div>
+                    <div class="form-group">
+                        <label>Provinsi</label>
+                        <input type="text" id="formProvinsi" placeholder="DKI Jakarta">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select id="formStatus">
+                            <option value="Tersedia">Tersedia</option>
+                            <option value="Terjual">Terjual</option>
+                            <option value="Disewa">Disewa</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>URL Gambar (opsional)</label>
+                        <input type="text" id="formGambar" placeholder="https://...">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Nama Pemilik</label>
+                        <input type="text" id="formPemilik" placeholder="John Doe">
+                    </div>
+                    <div class="form-group">
+                        <label>Telepon</label>
+                        <input type="text" id="formTelepon" placeholder="08123456789">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Deskripsi</label>
+                    <textarea id="formDeskripsi" placeholder="Deskripsi lengkap tentang properti..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeModal('modalProperty')">Batal</button>
+                <button class="btn-submit" onclick="submitProperty()">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DELETE -->
+    <div class="modal-overlay" id="modalDelete">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>&#9888; Konfirmasi Hapus</h3>
+                <button class="modal-close" onclick="closeModal('modalDelete')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:14px;color:#333;">Apakah Anda yakin ingin menghapus properti <strong id="deletePropertyName"></strong>?</p>
+                <p style="font-size:12px;color:#999;margin-top:8px;">Tindakan ini tidak dapat dibatalkan.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeModal('modalDelete')">Batal</button>
+                <button class="btn-submit" style="background:#ef4444;" onclick="confirmDelete()">Hapus</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allProperties = [];
+        let editMode = false;
+        let deleteId = 0;
+
+        // Clock
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('currentTime').textContent = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            document.getElementById('currentDate').textContent = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+        }
+        updateClock(); setInterval(updateClock, 1000);
+
+        // Load properties
+        document.addEventListener('DOMContentLoaded', loadProperties);
+
+        function loadProperties() {
+            fetch('/property/api/list')
+                .then(res => res.json())
+                .then(data => {
+                    allProperties = data;
+                    renderProperties(data);
+                    updateStats(data);
+                })
+                .catch(() => {
+                    document.getElementById('propertyGrid').innerHTML = '';
+                    document.getElementById('emptyState').style.display = 'block';
+                });
+        }
+
+        function formatHarga(num) {
+            if (num >= 1000000000) return 'Rp ' + (num / 1000000000).toFixed(1) + ' M';
+            if (num >= 1000000) return 'Rp ' + (num / 1000000).toFixed(0) + ' Jt';
+            return 'Rp ' + num.toLocaleString('id-ID');
+        }
+
+        function getPropertyIcon(tipe) {
+            const icons = { 'Rumah': '&#127968;', 'Apartemen': '&#127962;', 'Ruko': '&#127970;', 'Tanah': '&#127966;', 'Kos': '&#127975;' };
+            return icons[tipe] || '&#127968;';
+        }
+
+        function getGradient(tipe) {
+            const g = { 'Rumah': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', 'Apartemen': 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', 'Ruko': 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', 'Tanah': 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)', 'Kos': 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)' };
+            return g[tipe] || g['Rumah'];
+        }
+
+        function renderProperties(data) {
+            const grid = document.getElementById('propertyGrid');
+            const empty = document.getElementById('emptyState');
+            if (!data || data.length === 0) {
+                grid.innerHTML = '';
+                empty.style.display = 'block';
+                return;
+            }
+            empty.style.display = 'none';
+            grid.innerHTML = data.map(p => `
+                <div class="property-card" data-tipe="${p.tipeProperti}" data-status="${p.statusListing}" data-text="${(p.judul+' '+p.kota+' '+p.alamat).toLowerCase()}">
+                    <div class="property-img" style="background:${getGradient(p.tipeProperti)}">
+                        ${p.gambarUrl ? '<img src="'+p.gambarUrl+'" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display=\'none\';this.parentNode.innerHTML+=\''+getPropertyIcon(p.tipeProperti)+'\'">' : getPropertyIcon(p.tipeProperti)}
+                        <span class="status-badge status-${(p.statusListing||'Tersedia').toLowerCase()}">${p.statusListing || 'Tersedia'}</span>
+                    </div>
+                    <div class="property-body">
+                        <span class="property-type">${p.tipeProperti}</span>
+                        <div class="property-title">${p.judul}</div>
+                        <div class="property-location">&#128205; ${p.kota}${p.provinsi ? ', ' + p.provinsi : ''}</div>
+                        <div class="property-price">${formatHarga(p.harga)}</div>
+                        <div class="property-specs">
+                            ${p.luasTanah ? '<div class="spec-item">&#128207; ' + p.luasTanah + ' m&sup2; tanah</div>' : ''}
+                            ${p.luasBangunan ? '<div class="spec-item">&#127970; ' + p.luasBangunan + ' m&sup2; bangunan</div>' : ''}
+                            ${p.jumlahKamar ? '<div class="spec-item">&#128719; ' + p.jumlahKamar + ' kamar</div>' : ''}
+                            ${p.jumlahKamarMandi ? '<div class="spec-item">&#128704; ' + p.jumlahKamarMandi + ' KM</div>' : ''}
+                        </div>
+                        <div class="property-footer">
+                            <div class="property-owner">${p.namaPemilik ? '&#128100; ' + p.namaPemilik : ''}</div>
+                            <div class="property-actions">
+                                <button class="btn-edit" onclick='openEditModal(${JSON.stringify(p)})'>&#9998; Edit</button>
+                                <button class="btn-danger" onclick="openDeleteModal(${p.idProperty}, '${(p.judul||'').replace(/'/g,"\\'")}')">&#128465;</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateStats(data) {
+            document.getElementById('statTotal').textContent = data.length;
+            document.getElementById('statTersedia').textContent = data.filter(p => p.statusListing === 'Tersedia').length;
+            document.getElementById('statTerjual').textContent = data.filter(p => p.statusListing === 'Terjual').length;
+        }
+
+        function filterProperties() {
+            const search = document.getElementById('searchProperty').value.toLowerCase();
+            const tipe = document.getElementById('filterTipe').value;
+            const status = document.getElementById('filterStatus').value;
+            const filtered = allProperties.filter(p => {
+                const matchSearch = !search || (p.judul + ' ' + p.kota + ' ' + p.alamat).toLowerCase().includes(search);
+                const matchTipe = !tipe || p.tipeProperti === tipe;
+                const matchStatus = !status || p.statusListing === status;
+                return matchSearch && matchTipe && matchStatus;
+            });
+            renderProperties(filtered);
+        }
+
+        function openAddModal() {
+            editMode = false;
+            document.getElementById('modalPropertyTitle').innerHTML = '&#10010; Tambah Properti Baru';
+            document.getElementById('formIdProperty').value = '0';
+            ['formJudul','formHarga','formLuasTanah','formLuasBangunan','formKamar','formKamarMandi','formAlamat','formKota','formProvinsi','formPemilik','formTelepon','formDeskripsi','formGambar'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('formTipe').value = 'Rumah';
+            document.getElementById('formStatus').value = 'Tersedia';
+            openModal('modalProperty');
+        }
+
+        function openEditModal(p) {
+            editMode = true;
+            document.getElementById('modalPropertyTitle').innerHTML = '&#9998; Edit Properti';
+            document.getElementById('formIdProperty').value = p.idProperty;
+            document.getElementById('formJudul').value = p.judul || '';
+            document.getElementById('formTipe').value = p.tipeProperti || 'Rumah';
+            document.getElementById('formHarga').value = p.harga || '';
+            document.getElementById('formLuasTanah').value = p.luasTanah || '';
+            document.getElementById('formLuasBangunan').value = p.luasBangunan || '';
+            document.getElementById('formKamar').value = p.jumlahKamar || '';
+            document.getElementById('formKamarMandi').value = p.jumlahKamarMandi || '';
+            document.getElementById('formAlamat').value = p.alamat || '';
+            document.getElementById('formKota').value = p.kota || '';
+            document.getElementById('formProvinsi').value = p.provinsi || '';
+            document.getElementById('formStatus').value = p.statusListing || 'Tersedia';
+            document.getElementById('formGambar').value = p.gambarUrl || '';
+            document.getElementById('formPemilik').value = p.namaPemilik || '';
+            document.getElementById('formTelepon').value = p.teleponPemilik || '';
+            document.getElementById('formDeskripsi').value = p.deskripsi || '';
+            openModal('modalProperty');
+        }
+
+        function submitProperty() {
+            const payload = {
+                idProperty: parseInt(document.getElementById('formIdProperty').value) || 0,
+                judul: document.getElementById('formJudul').value.trim(),
+                tipeProperti: document.getElementById('formTipe').value,
+                harga: parseInt(document.getElementById('formHarga').value) || 0,
+                luasTanah: parseInt(document.getElementById('formLuasTanah').value) || 0,
+                luasBangunan: parseInt(document.getElementById('formLuasBangunan').value) || 0,
+                jumlahKamar: parseInt(document.getElementById('formKamar').value) || 0,
+                jumlahKamarMandi: parseInt(document.getElementById('formKamarMandi').value) || 0,
+                alamat: document.getElementById('formAlamat').value.trim(),
+                kota: document.getElementById('formKota').value.trim(),
+                provinsi: document.getElementById('formProvinsi').value.trim(),
+                statusListing: document.getElementById('formStatus').value,
+                gambarUrl: document.getElementById('formGambar').value.trim(),
+                namaPemilik: document.getElementById('formPemilik').value.trim(),
+                teleponPemilik: document.getElementById('formTelepon').value.trim(),
+                deskripsi: document.getElementById('formDeskripsi').value.trim()
+            };
+            if (!payload.judul || !payload.kota || !payload.alamat) { showToast('Judul, Kota, dan Alamat wajib diisi!', 'error'); return; }
+            const url = editMode ? '/property/api/update' : '/property/api/add';
+            fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+                .then(res => res.json())
+                .then(data => { closeModal('modalProperty'); showToast(data.message, data.success ? 'success' : 'error'); loadProperties(); })
+                .catch(() => showToast('Terjadi kesalahan!', 'error'));
+        }
+
+        function openDeleteModal(id, name) { deleteId = id; document.getElementById('deletePropertyName').textContent = name; openModal('modalDelete'); }
+        function confirmDelete() {
+            fetch('/property/api/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ idProperty: deleteId }) })
+                .then(res => res.json())
+                .then(data => { closeModal('modalDelete'); showToast(data.message, data.success ? 'success' : 'error'); loadProperties(); })
+                .catch(() => showToast('Gagal menghapus!', 'error'));
+        }
+
+        function openModal(id) { document.getElementById(id).classList.add('show'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+        function showToast(msg, type) {
+            const t = document.createElement('div'); t.className = 'toast ' + type; t.textContent = msg; document.body.appendChild(t);
+            setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity 0.3s'; setTimeout(() => t.remove(), 300); }, 3000);
+        }
+        document.querySelectorAll('.modal-overlay').forEach(o => o.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('show'); }));
+    </script>
+</body>
+</html>

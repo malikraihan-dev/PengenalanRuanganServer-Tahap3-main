@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Report - RuangServer</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background-color: #f8f8f8; color: #1a1a1a; min-height: 100vh; }
+        .sidebar { position: fixed; left: 0; top: 0; width: 260px; height: 100vh; background: #0a0a0a; color: #fff; z-index: 100; display: flex; flex-direction: column; }
+        .sidebar-header { padding: 28px 24px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+        .sidebar-header .logo { display: flex; align-items: center; gap: 12px; }
+        .sidebar-header .logo-icon { width: 40px; height: 40px; background: #fff; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        .sidebar-header .logo-text { font-size: 16px; font-weight: 700; }
+        .sidebar-header .logo-sub { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 2px; }
+        .sidebar-nav { padding: 16px 12px; flex: 1; overflow-y: auto; }
+        .nav-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: rgba(255,255,255,0.35); padding: 8px 12px; margin-top: 8px; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-radius: 8px; color: rgba(255,255,255,0.6); text-decoration: none; font-size: 14px; font-weight: 500; transition: all 0.2s; cursor: pointer; margin-bottom: 2px; }
+        .nav-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
+        .nav-item.active { background: #fff; color: #0a0a0a; }
+        .nav-item .nav-icon { width: 20px; text-align: center; font-size: 16px; }
+        .sidebar-footer { padding: 20px 24px; border-top: 1px solid rgba(255,255,255,0.08); }
+        .sidebar-footer .version { font-size: 11px; color: rgba(255,255,255,0.3); }
+        .main-content { margin-left: 260px; min-height: 100vh; }
+        .topbar { background: #fff; border-bottom: 1px solid #e5e5e5; padding: 0 36px; height: 64px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+        .topbar h1 { font-size: 20px; font-weight: 700; }
+        .page-content { padding: 28px 36px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 28px; }
+        .stat-card { background: #fff; border-radius: 12px; padding: 24px; border: 1px solid #e5e5e5; }
+        .stat-card .stat-label { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+        .stat-card .stat-value { font-size: 28px; font-weight: 800; }
+        .stat-card .stat-sub { font-size: 12px; color: #888; margin-top: 4px; }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .section-header h2 { font-size: 18px; font-weight: 700; }
+        .btn { padding: 10px 20px; border-radius: 8px; border: none; font-size: 13px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.2s; }
+        .btn-primary { background: #0a0a0a; color: #fff; }
+        .btn-primary:hover { background: #333; }
+        .btn-secondary { background: #f0f0f0; color: #333; border: 1px solid #ddd; }
+        .btn-danger { background: #ef4444; color: #fff; }
+        .btn-danger:hover { background: #dc2626; }
+        .btn-success { background: #22c55e; color: #fff; }
+        .btn-success:hover { background: #16a34a; }
+        .btn-warning { background: #f59e0b; color: #fff; }
+        .btn-sm { padding: 6px 14px; font-size: 12px; }
+
+        /* Table */
+        .data-table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; border: 1px solid #e5e5e5; margin-bottom: 28px; }
+        .data-table th { background: #fafafa; padding: 14px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #555; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e5e5e5; }
+        .data-table td { padding: 14px 16px; font-size: 14px; border-bottom: 1px solid #f0f0f0; }
+        .data-table tr:hover { background: #fafafa; }
+        .status-badge { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .status-draft { background: #f3f4f6; color: #6b7280; }
+        .status-submitted { background: #dbeafe; color: #2563eb; }
+        .status-approved { background: #dcfce7; color: #16a34a; }
+        .status-rejected { background: #fee2e2; color: #dc2626; }
+
+        /* Expense detail panel */
+        .detail-panel { background: #fff; border-radius: 12px; border: 1px solid #e5e5e5; padding: 24px; margin-bottom: 28px; display: none; }
+        .detail-panel.show { display: block; }
+        .detail-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #f0f0f0; }
+        .detail-header h3 { font-size: 16px; font-weight: 700; }
+        .summary-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
+        .summary-card { background: #f8f8f8; border-radius: 8px; padding: 14px; text-align: center; }
+        .summary-card .sum-label { font-size: 11px; color: #888; margin-bottom: 4px; }
+        .summary-card .sum-value { font-size: 18px; font-weight: 700; }
+
+        /* Modal */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+        .modal-overlay.show { display: flex; }
+        .modal { background: #fff; border-radius: 16px; padding: 32px; width: 90%; max-width: 540px; max-height: 90vh; overflow-y: auto; }
+        .modal h3 { font-size: 18px; font-weight: 700; margin-bottom: 20px; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; color: #333; margin-bottom: 6px; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 14px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; font-family: 'Inter', sans-serif; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #0a0a0a; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+        /* Chart area */
+        .chart-container { background: #fff; border-radius: 12px; border: 1px solid #e5e5e5; padding: 24px; margin-bottom: 28px; }
+        .chart-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+        .chart-bar .bar-label { width: 120px; font-size: 13px; font-weight: 500; text-align: right; }
+        .chart-bar .bar-track { flex: 1; height: 28px; background: #f0f0f0; border-radius: 6px; overflow: hidden; }
+        .chart-bar .bar-fill { height: 100%; border-radius: 6px; display: flex; align-items: center; padding: 0 10px; font-size: 11px; color: #fff; font-weight: 600; min-width: 40px; }
+        .bar-transport { background: #3b82f6; }
+        .bar-makan { background: #f59e0b; }
+        .bar-akomodasi { background: #8b5cf6; }
+        .bar-supplies { background: #10b981; }
+        .bar-entertainment { background: #ef4444; }
+        .bar-lainnya { background: #6b7280; }
+        .amount { font-weight: 700; }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon">&#128421;</div>
+                <div>
+                    <div class="logo-text">RuangServer</div>
+                    <div class="logo-sub">Monitoring System</div>
+                </div>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-label">Menu Utama</div>
+            <a class="nav-item" href="/"><span class="nav-icon">&#9632;</span><span>Dashboard</span></a>
+            <div class="nav-label" style="margin-top:24px;">Server Monitoring</div>
+            <a class="nav-item" href="/server-monitor"><span class="nav-icon">&#128421;</span><span>Monitor Server</span></a>
+            <a class="nav-item" href="/server-monitor-register"><span class="nav-icon">&#128100;</span><span>Registrasi Server</span></a>
+            <a class="nav-item" href="/user-management"><span class="nav-icon">&#128101;</span><span>User Panel</span></a>
+            <div class="nav-label" style="margin-top:24px;">Fitur Lainnya</div>
+            <a class="nav-item" href="/property"><span class="nav-icon">&#127968;</span><span>Real Estate</span></a>
+            <a class="nav-item" href="/project"><span class="nav-icon">&#128203;</span><span>Project Management</span></a>
+            <a class="nav-item" href="/chatbot"><span class="nav-icon">&#129302;</span><span>Chatbot</span></a>
+            <a class="nav-item" href="/music"><span class="nav-icon">&#127925;</span><span>Music Streaming</span></a>
+            <a class="nav-item active" href="/expense"><span class="nav-icon">&#128176;</span><span>Expense Report</span></a>
+            <a class="nav-item" href="/language"><span class="nav-icon">&#127760;</span><span>Language Learning</span></a>
+        </nav>
+        <div class="sidebar-footer"><div class="version">RuangServer v3.0</div></div>
+    </aside>
+
+    <div class="main-content">
+        <div class="topbar">
+            <h1>&#128176; Expense Report Generator</h1>
+        </div>
+
+        <div class="page-content">
+            <!-- Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Total Laporan</div>
+                    <div class="stat-value" th:text="${totalReports}">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Draft</div>
+                    <div class="stat-value" th:text="${totalDraft}">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Approved</div>
+                    <div class="stat-value" th:text="${totalApproved}">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Pengeluaran</div>
+                    <div class="stat-value amount" th:text="'Rp ' + ${#numbers.formatDecimal(totalExpense, 0, 'COMMA', 0, 'POINT')}">Rp 0</div>
+                </div>
+            </div>
+
+            <!-- Reports Table -->
+            <div class="section-header">
+                <h2>&#128196; Laporan Pengeluaran</h2>
+                <button class="btn btn-primary" onclick="showAddReport()">+ Buat Laporan</button>
+            </div>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>No</th>
+                        <th>Judul Laporan</th>
+                        <th>Periode</th>
+                        <th>Total Item</th>
+                        <th>Total Biaya</th>
+                        <th>Status</th>
+                        <th>Tanggal</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="r, idx : ${reports}">
+                        <td th:text="${idx.index + 1}">1</td>
+                        <td style="font-weight:600" th:text="${r.judulReport}">-</td>
+                        <td th:text="${r.periode}">-</td>
+                        <td th:text="${r.totalItems}">0</td>
+                        <td class="amount" th:text="'Rp ' + ${#numbers.formatDecimal(r.totalAmount, 0, 'COMMA', 0, 'POINT')}">Rp 0</td>
+                        <td>
+                            <span class="status-badge"
+                                  th:classappend="${r.statusReport == 'Draft' ? 'status-draft' : r.statusReport == 'Submitted' ? 'status-submitted' : r.statusReport == 'Approved' ? 'status-approved' : 'status-rejected'}"
+                                  th:text="${r.statusReport}">Draft</span>
+                        </td>
+                        <td th:text="${#dates.format(r.createdAt, 'dd/MM/yyyy')}">-</td>
+                        <td>
+                            <button class="btn btn-secondary btn-sm" th:data-id="${r.idReport}" onclick="viewReport(parseInt(this.dataset.id))">Detail</button>
+                            <button class="btn btn-sm btn-primary" th:data-id="${r.idReport}" onclick="editReport(parseInt(this.dataset.id))">Edit</button>
+                            <button class="btn btn-danger btn-sm" th:data-id="${r.idReport}" onclick="deleteReport(parseInt(this.dataset.id))">Hapus</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Detail Panel -->
+            <div class="detail-panel" id="detailPanel">
+                <div class="detail-header">
+                    <h3 id="detailTitle">Detail Laporan</h3>
+                    <div>
+                        <button class="btn btn-primary btn-sm" onclick="showAddItem()">+ Tambah Item</button>
+                        <button class="btn btn-secondary btn-sm" onclick="closeDetail()">Tutup</button>
+                    </div>
+                </div>
+                <div class="summary-cards" id="summaryCards"></div>
+
+                <!-- Chart -->
+                <div class="chart-container" id="chartContainer" style="display:none;">
+                    <h3 style="font-size:14px; font-weight:700; margin-bottom:16px;">Ringkasan per Kategori</h3>
+                    <div id="chartBars"></div>
+                </div>
+
+                <!-- Items list -->
+                <table class="data-table" id="itemsTable">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Nama Item</th>
+                            <th>Kategori</th>
+                            <th>Jumlah</th>
+                            <th>Tanggal</th>
+                            <th>Keterangan</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="itemsBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Modal -->
+    <div class="modal-overlay" id="reportModal">
+        <div class="modal">
+            <h3 id="reportModalTitle">Buat Laporan Pengeluaran</h3>
+            <input type="hidden" id="editReportId">
+            <div class="form-group">
+                <label>Judul Laporan *</label>
+                <input type="text" id="rptJudul" placeholder="Contoh: Pengeluaran Operasional Januari 2026">
+            </div>
+            <div class="form-group">
+                <label>Deskripsi</label>
+                <textarea id="rptDesc" rows="3" placeholder="Deskripsi laporan"></textarea>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Periode</label>
+                    <input type="text" id="rptPeriode" placeholder="Januari 2026">
+                </div>
+                <div class="form-group">
+                    <label>Status</label>
+                    <select id="rptStatus">
+                        <option value="Draft">Draft</option>
+                        <option value="Submitted">Submitted</option>
+                        <option value="Approved">Approved</option>
+                        <option value="Rejected">Rejected</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModal('reportModal')">Batal</button>
+                <button class="btn btn-primary" onclick="saveReport()">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Item Modal -->
+    <div class="modal-overlay" id="itemModal">
+        <div class="modal">
+            <h3 id="itemModalTitle">Tambah Item Pengeluaran</h3>
+            <input type="hidden" id="editItemId">
+            <input type="hidden" id="currentReportId">
+            <div class="form-group">
+                <label>Nama Item *</label>
+                <input type="text" id="itemNama" placeholder="Contoh: Tiket Pesawat Jakarta-Surabaya">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Kategori *</label>
+                    <select id="itemKategori">
+                        <option value="Transport">Transport</option>
+                        <option value="Makan">Makan</option>
+                        <option value="Akomodasi">Akomodasi</option>
+                        <option value="Supplies">Supplies</option>
+                        <option value="Entertainment">Entertainment</option>
+                        <option value="Lainnya">Lainnya</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Jumlah (Rp) *</label>
+                    <input type="number" id="itemJumlah" placeholder="500000" min="0">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Tanggal *</label>
+                    <input type="date" id="itemTanggal">
+                </div>
+                <div class="form-group">
+                    <label>Bukti URL</label>
+                    <input type="text" id="itemBukti" placeholder="https://...">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Keterangan</label>
+                <textarea id="itemKet" rows="2" placeholder="Keterangan tambahan"></textarea>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModal('itemModal')">Batal</button>
+                <button class="btn btn-primary" onclick="saveItem()">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentViewReportId = null;
+
+        function showAddReport() {
+            document.getElementById('reportModalTitle').textContent = 'Buat Laporan Pengeluaran';
+            document.getElementById('editReportId').value = '';
+            document.getElementById('rptJudul').value = '';
+            document.getElementById('rptDesc').value = '';
+            document.getElementById('rptPeriode').value = '';
+            document.getElementById('rptStatus').value = 'Draft';
+            document.getElementById('reportModal').classList.add('show');
+        }
+
+        function editReport(id) {
+            fetch('/expense/api/' + id).then(r => r.json()).then(rpt => {
+                document.getElementById('reportModalTitle').textContent = 'Edit Laporan';
+                document.getElementById('editReportId').value = rpt.idReport;
+                document.getElementById('rptJudul').value = rpt.judulReport;
+                document.getElementById('rptDesc').value = rpt.deskripsi || '';
+                document.getElementById('rptPeriode').value = rpt.periode || '';
+                document.getElementById('rptStatus').value = rpt.statusReport;
+                document.getElementById('reportModal').classList.add('show');
+            });
+        }
+
+        function saveReport() {
+            const id = document.getElementById('editReportId').value;
+            const data = {
+                judulReport: document.getElementById('rptJudul').value,
+                deskripsi: document.getElementById('rptDesc').value,
+                periode: document.getElementById('rptPeriode').value,
+                statusReport: document.getElementById('rptStatus').value
+            };
+            if (!data.judulReport) { alert('Judul laporan wajib diisi!'); return; }
+            if (id) data.idReport = parseInt(id);
+            const url = id ? '/expense/api/update' : '/expense/api/add';
+            fetch(url, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) })
+                .then(r => r.json())
+                .then(res => { if (res.success) location.reload(); else alert(res.message); });
+        }
+
+        function deleteReport(id) {
+            if (!confirm('Hapus laporan ini beserta semua item-nya?')) return;
+            fetch('/expense/api/delete', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({idReport: id}) })
+                .then(r => r.json())
+                .then(res => { if (res.success) location.reload(); else alert(res.message); });
+        }
+
+        function viewReport(id) {
+            currentViewReportId = id;
+            document.getElementById('currentReportId').value = id;
+            document.getElementById('detailPanel').classList.add('show');
+
+            fetch('/expense/api/' + id).then(r => r.json()).then(rpt => {
+                document.getElementById('detailTitle').textContent = rpt.judulReport;
+            });
+
+            loadItems(id);
+            loadSummary(id);
+        }
+
+        function closeDetail() {
+            document.getElementById('detailPanel').classList.remove('show');
+            currentViewReportId = null;
+        }
+
+        function loadItems(id) {
+            fetch('/expense/api/' + id + '/items').then(r => r.json()).then(items => {
+                const tbody = document.getElementById('itemsBody');
+                tbody.innerHTML = items.map((item, i) => `
+                    <tr>
+                        <td>${i+1}</td>
+                        <td style="font-weight:600">${item.namaItem}</td>
+                        <td><span class="status-badge status-${item.kategori.toLowerCase()}" style="background:#f0f0f0;color:#333">${item.kategori}</span></td>
+                        <td class="amount">Rp ${Number(item.jumlah).toLocaleString('id-ID')}</td>
+                        <td>${item.tanggal || '-'}</td>
+                        <td>${item.keterangan || '-'}</td>
+                        <td>
+                            <button class="btn btn-danger btn-sm" onclick="deleteItem(${item.idItem})">Hapus</button>
+                        </td>
+                    </tr>`).join('');
+            });
+        }
+
+        function loadSummary(id) {
+            fetch('/expense/api/' + id + '/summary').then(r => r.json()).then(summary => {
+                const container = document.getElementById('summaryCards');
+                const chartDiv = document.getElementById('chartBars');
+                const chartContainer = document.getElementById('chartContainer');
+
+                if (summary.length === 0) {
+                    container.innerHTML = '<div class="summary-card"><div class="sum-label">Belum ada data</div></div>';
+                    chartContainer.style.display = 'none';
+                    return;
+                }
+
+                const maxTotal = Math.max(...summary.map(s => s.total));
+                container.innerHTML = summary.map(s => `
+                    <div class="summary-card">
+                        <div class="sum-label">${s.kategori}</div>
+                        <div class="sum-value">Rp ${Number(s.total).toLocaleString('id-ID')}</div>
+                        <div style="font-size:11px;color:#888">${s.jumlahItem} item</div>
+                    </div>`).join('');
+
+                const colorMap = {Transport:'bar-transport',Makan:'bar-makan',Akomodasi:'bar-akomodasi',Supplies:'bar-supplies',Entertainment:'bar-entertainment',Lainnya:'bar-lainnya'};
+                chartContainer.style.display = 'block';
+                chartDiv.innerHTML = summary.map(s => `
+                    <div class="chart-bar">
+                        <div class="bar-label">${s.kategori}</div>
+                        <div class="bar-track">
+                            <div class="bar-fill ${colorMap[s.kategori]||'bar-lainnya'}" style="width:${(s.total/maxTotal*100)}%">Rp ${Number(s.total).toLocaleString('id-ID')}</div>
+                        </div>
+                    </div>`).join('');
+            });
+        }
+
+        function showAddItem() {
+            if (!currentViewReportId) { alert('Pilih laporan terlebih dahulu.'); return; }
+            document.getElementById('itemModalTitle').textContent = 'Tambah Item Pengeluaran';
+            document.getElementById('editItemId').value = '';
+            document.getElementById('itemNama').value = '';
+            document.getElementById('itemKategori').value = 'Transport';
+            document.getElementById('itemJumlah').value = '';
+            document.getElementById('itemTanggal').value = '';
+            document.getElementById('itemKet').value = '';
+            document.getElementById('itemBukti').value = '';
+            document.getElementById('itemModal').classList.add('show');
+        }
+
+        function saveItem() {
+            const id = document.getElementById('editItemId').value;
+            const data = {
+                idReport: currentViewReportId,
+                namaItem: document.getElementById('itemNama').value,
+                kategori: document.getElementById('itemKategori').value,
+                jumlah: parseFloat(document.getElementById('itemJumlah').value),
+                tanggal: document.getElementById('itemTanggal').value,
+                keterangan: document.getElementById('itemKet').value,
+                buktiUrl: document.getElementById('itemBukti').value
+            };
+            if (!data.namaItem || !data.jumlah) { alert('Nama dan jumlah wajib diisi!'); return; }
+            if (id) data.idItem = parseInt(id);
+            const url = id ? '/expense/api/items/update' : '/expense/api/items/add';
+            fetch(url, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) })
+                .then(r => r.json())
+                .then(res => {
+                    if (res.success) {
+                        closeModal('itemModal');
+                        loadItems(currentViewReportId);
+                        loadSummary(currentViewReportId);
+                        setTimeout(() => location.reload(), 500);
+                    } else alert(res.message);
+                });
+        }
+
+        function deleteItem(id) {
+            if (!confirm('Hapus item ini?')) return;
+            fetch('/expense/api/items/delete', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({idItem: id}) })
+                .then(r => r.json())
+                .then(res => {
+                    if (res.success) {
+                        loadItems(currentViewReportId);
+                        loadSummary(currentViewReportId);
+                        setTimeout(() => location.reload(), 500);
+                    } else alert(res.message);
+                });
+        }
+
+        function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+        document.querySelectorAll('.modal-overlay').forEach(m => m.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('show'); }));
+    </script>
+</body>
+</html>
