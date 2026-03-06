@@ -138,76 +138,6 @@ COPY public.face_data (id_face, nim, label, face_descriptor, image_data, created
 
 
 --
--- Data for Name: language_courses; Type: TABLE DATA; Schema: public; Owner: -
---
-
-COPY public.language_courses (id_course, bahasa, level, deskripsi, icon_emoji, created_at) FROM stdin;
-1	English	Beginner	Belajar bahasa Inggris dasar untuk pemula.	ðŸ‡¬ðŸ‡§	2026-02-24 13:04:08.522724
-2	English	Intermediate	Bahasa Inggris level menengah.	ðŸ‡¬ðŸ‡§	2026-02-24 13:04:08.522724
-3	Japanese	Beginner	Belajar bahasa Jepang dasar.	ðŸ‡¯ðŸ‡µ	2026-02-24 13:04:08.522724
-4	Korean	Beginner	Belajar bahasa Korea dasar.	ðŸ‡°ðŸ‡·	2026-02-24 13:04:08.522724
-5	Arabic	Beginner	Belajar bahasa Arab dasar.	ðŸ‡¸ðŸ‡¦	2026-02-24 13:04:08.522724
-6	Mandarin	Beginner	Belajar bahasa Mandarin dasar.	ðŸ‡¨ðŸ‡³	2026-02-24 13:04:08.522724
-7	French	Beginner	Belajar bahasa Prancis dasar.	ðŸ‡«ðŸ‡·	2026-02-24 13:04:08.522724
-8	German	Beginner	Belajar bahasa Jerman dasar.	ðŸ‡©ðŸ‡ª	2026-02-24 13:04:08.522724
-9	Spanish	Beginner	Belajar bahasa Spanyol dasar.	ðŸ‡ªðŸ‡¸	2026-02-24 13:04:08.522724
-10	Thai	Beginner	Belajar bahasa Thailand dasar.	ðŸ‡¹ðŸ‡­	2026-02-24 13:04:08.522724
-\.
-
-
---
--- Data for Name: music_tracks; Type: TABLE DATA; Schema: public; Owner: -
---
-
-COPY public.music_tracks (id_track, judul, artist, album, genre, durasi, file_url, cover_url, play_count, created_at) FROM stdin;
-1	Bohemian Rhapsody	Queen	A Night at the Opera	Rock	354	\N	\N	0	2026-02-24 13:04:08.375633
-2	Hotel California	Eagles	Hotel California	Rock	391	\N	\N	0	2026-02-24 13:04:08.375633
-3	Shape of You	Ed Sheeran	Divide	Pop	234	\N	\N	0	2026-02-24 13:04:08.375633
-4	Blinding Lights	The Weeknd	After Hours	Pop	200	\N	\N	0	2026-02-24 13:04:08.375633
-5	Take Five	Dave Brubeck	Time Out	Jazz	324	\N	\N	0	2026-02-24 13:04:08.375633
-6	Fly Me to the Moon	Frank Sinatra	It Might as Well Be Swing	Jazz	149	\N	\N	0	2026-02-24 13:04:08.375633
-7	Dynamite	BTS	BE	K-Pop	199	\N	\N	0	2026-02-24 13:04:08.375633
-8	Lemon	Kenshi Yonezu	Lemon	J-Pop	254	\N	\N	0	2026-02-24 13:04:08.375633
-9	Tak Ingin Usai	Keisya Levronka	Tak Ingin Usai	Pop	237	\N	\N	0	2026-02-24 13:04:08.375633
-10	Aku Milikmu Malam Ini	Pongki Barata	Somewhere Out There	Pop	285	\N	\N	0	2026-02-24 13:04:08.375633
-11	Bengawan Solo	Gesang	Keroncong Klasik	Keroncong	240	\N	\N	0	2026-02-24 13:04:08.375633
-12	Sekali Lagi	Isyana Sarasvati	LEXICON	Pop	221	\N	\N	0	2026-02-24 13:04:08.375633
-13	Butter	BTS	Butter	K-Pop	165	\N	\N	0	2026-02-24 13:04:08.375633
-14	Pesan Terakhir	Lyodra	Pesan Terakhir	Pop	268	\N	\N	0	2026-02-24 13:04:08.375633
-15	Night Changes	One Direction	Four	Pop	226	\N	\N	0	2026-02-24 13:04:08.375633
-\.
-
-
---
--- Data for Name: playlists; Type: TABLE DATA; Schema: public; Owner: -
---
-
-COPY public.playlists (id_playlist, nama_playlist, deskripsi, cover_url, created_at) FROM stdin;
-1	Top Hits	Kumpulan lagu hits terpopuler	\N	2026-02-24 13:04:08.381547
-2	Chill Vibes	Lagu santai untuk relaksasi	\N	2026-02-24 13:04:08.381547
-3	Workout Mix	Lagu semangat untuk olahraga	\N	2026-02-24 13:04:08.381547
-\.
-
-
---
--- Data for Name: playlist_tracks; Type: TABLE DATA; Schema: public; Owner: -
---
-
-COPY public.playlist_tracks (id, id_playlist, id_track, track_order) FROM stdin;
-1	1	3	1
-2	1	4	2
-3	1	7	3
-4	1	13	4
-5	2	5	1
-6	2	6	2
-7	2	11	3
-8	3	1	1
-9	3	4	2
-10	3	7	3
-\.
-
-
---
 -- Data for Name: projects; Type: TABLE DATA; Schema: public; Owner: -
 --
 
@@ -224,78 +154,10 @@ COPY public.project_tasks (id_task, id_project, judul_task, deskripsi, status_ta
 
 
 --
--- Data for Name: property_listing; Type: TABLE DATA; Schema: public; Owner: -
---
-
-COPY public.property_listing (id_property, judul, deskripsi, tipe_properti, harga, luas_tanah, luas_bangunan, jumlah_kamar, jumlah_kamar_mandi, alamat, kota, provinsi, status_listing, nama_pemilik, telepon_pemilik, gambar_url, created_at, updated_at) FROM stdin;
-\.
-
-
---
--- Data for Name: quiz_results; Type: TABLE DATA; Schema: public; Owner: -
---
-
-COPY public.quiz_results (id_quiz, id_course, total_questions, correct_answers, score, taken_at) FROM stdin;
-\.
-
-
---
 -- Data for Name: restexamplecrud; Type: TABLE DATA; Schema: public; Owner: -
 --
 
 COPY public.restexamplecrud (id, key, value, rand, nama, waktu_input) FROM stdin;
-\.
-
-
---
--- Data for Name: vocabulary; Type: TABLE DATA; Schema: public; Owner: -
---
-
-COPY public.vocabulary (id_vocab, id_course, kata, terjemahan, pelafalan, contoh_kalimat, kategori_kata, learned, created_at) FROM stdin;
-1	1	Hello	Halo	he-LO	Hello, how are you?	Greeting	f	2026-02-24 13:04:08.538104
-2	1	Good morning	Selamat pagi	gud MOR-ning	Good morning, teacher!	Greeting	f	2026-02-24 13:04:08.538104
-3	1	Thank you	Terima kasih	thangk yoo	Thank you very much!	Phrase	f	2026-02-24 13:04:08.538104
-4	1	Please	Tolong / Silakan	pleez	Please sit down.	Phrase	f	2026-02-24 13:04:08.538104
-5	1	Water	Air	WO-ter	Can I have some water?	Noun	f	2026-02-24 13:04:08.538104
-6	1	Food	Makanan	food	The food is delicious.	Noun	f	2026-02-24 13:04:08.538104
-7	1	House	Rumah	haus	This is my house.	Noun	f	2026-02-24 13:04:08.538104
-8	1	Book	Buku	buk	I read a book every day.	Noun	f	2026-02-24 13:04:08.538104
-9	1	Go	Pergi	go	Let's go to school.	Verb	f	2026-02-24 13:04:08.538104
-10	1	Eat	Makan	eet	I eat rice for lunch.	Verb	f	2026-02-24 13:04:08.538104
-11	1	Beautiful	Cantik / Indah	BYOO-ti-ful	The garden is beautiful.	Adjective	f	2026-02-24 13:04:08.538104
-12	1	Big	Besar	big	That is a big house.	Adjective	f	2026-02-24 13:04:08.538104
-13	1	One	Satu	wun	I have one book.	Number	f	2026-02-24 13:04:08.538104
-14	1	Two	Dua	too	I have two cats.	Number	f	2026-02-24 13:04:08.538104
-15	1	Where	Di mana	wer	Where is the library?	Question	f	2026-02-24 13:04:08.538104
-16	2	Achievement	Pencapaian	uh-CHEEV-ment	This is a great achievement.	Noun	f	2026-02-24 13:04:08.545585
-17	2	Deadline	Batas waktu	DED-lain	The deadline is tomorrow.	Noun	f	2026-02-24 13:04:08.545585
-18	2	Negotiate	Bernegosiasi	ni-GO-shi-eit	We need to negotiate the terms.	Verb	f	2026-02-24 13:04:08.545585
-19	2	Efficient	Efisien	i-FI-shent	The new system is more efficient.	Adjective	f	2026-02-24 13:04:08.545585
-20	2	Furthermore	Selain itu	FUR-ther-mor	Furthermore, we need more data.	Adverb	f	2026-02-24 13:04:08.545585
-21	7	Bonjour	Halo	bon-ZHOOR	Bonjour, comment allez-vous?	Greeting	f	2026-02-24 13:04:08.559174
-22	7	Merci	Terima kasih	mer-SEE	Merci beaucoup!	Phrase	f	2026-02-24 13:04:08.559174
-23	7	Eau	Air	oh	Je voudrais de l'eau.	Noun	f	2026-02-24 13:04:08.559174
-24	7	Livre	Buku	LEE-vruh	C'est un bon livre.	Noun	f	2026-02-24 13:04:08.559174
-25	7	Manger	Makan	mon-ZHAY	Je vais manger.	Verb	f	2026-02-24 13:04:08.559174
-26	7	Beau	Tampan / Indah	boh	C'est un beau jardin.	Adjective	f	2026-02-24 13:04:08.559174
-27	7	Un	Satu	uhn	Un cafe, s'il vous plait.	Number	f	2026-02-24 13:04:08.559174
-28	7	Grand	Besar	gron	C'est une grande maison.	Adjective	f	2026-02-24 13:04:08.559174
-29	8	Hallo	Halo	HA-loh	Hallo, wie geht es Ihnen?	Greeting	f	2026-02-24 13:04:08.572185
-30	8	Danke	Terima kasih	DUNG-keh	Danke schon!	Phrase	f	2026-02-24 13:04:08.572185
-31	8	Wasser	Air	VA-ser	Ich mochte Wasser.	Noun	f	2026-02-24 13:04:08.572185
-32	8	Buch	Buku	bookh	Das ist ein gutes Buch.	Noun	f	2026-02-24 13:04:08.572185
-33	8	Essen	Makan	E-sen	Wir essen zusammen.	Verb	f	2026-02-24 13:04:08.572185
-34	8	Schon	Cantik / Indah	shurn	Der Garten ist schon.	Adjective	f	2026-02-24 13:04:08.572185
-35	8	Eins	Satu	ains	Eins, zwei, drei!	Number	f	2026-02-24 13:04:08.572185
-36	8	Gross	Besar	grohs	Das Haus ist gross.	Adjective	f	2026-02-24 13:04:08.572185
-37	9	Hola	Halo	OH-lah	Hola! Como estas?	Greeting	f	2026-02-24 13:04:08.574316
-38	9	Gracias	Terima kasih	GRAH-thee-ahs	Muchas gracias!	Phrase	f	2026-02-24 13:04:08.574316
-39	9	Agua	Air	AH-gwah	Quiero agua, por favor.	Noun	f	2026-02-24 13:04:08.574316
-40	9	Libro	Buku	LEE-broh	Es un buen libro.	Noun	f	2026-02-24 13:04:08.574316
-41	9	Comer	Makan	koh-MER	Vamos a comer.	Verb	f	2026-02-24 13:04:08.574316
-42	9	Hermoso	Cantik / Indah	er-MOH-soh	El jardin es hermoso.	Adjective	f	2026-02-24 13:04:08.574316
-43	9	Uno	Satu	OO-noh	Dame uno, por favor.	Number	f	2026-02-24 13:04:08.574316
-44	9	Grande	Besar	GRAN-deh	La casa es grande.	Adjective	f	2026-02-24 13:04:08.574316
 \.
 
 
@@ -356,34 +218,6 @@ SELECT pg_catalog.setval('public.face_data_id_face_seq', 1, false);
 
 
 --
--- Name: language_courses_id_course_seq; Type: SEQUENCE SET; Schema: public; Owner: -
---
-
-SELECT pg_catalog.setval('public.language_courses_id_course_seq', 10, true);
-
-
---
--- Name: music_tracks_id_track_seq; Type: SEQUENCE SET; Schema: public; Owner: -
---
-
-SELECT pg_catalog.setval('public.music_tracks_id_track_seq', 15, true);
-
-
---
--- Name: playlist_tracks_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
---
-
-SELECT pg_catalog.setval('public.playlist_tracks_id_seq', 10, true);
-
-
---
--- Name: playlists_id_playlist_seq; Type: SEQUENCE SET; Schema: public; Owner: -
---
-
-SELECT pg_catalog.setval('public.playlists_id_playlist_seq', 3, true);
-
-
---
 -- Name: project_tasks_id_task_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
@@ -398,20 +232,6 @@ SELECT pg_catalog.setval('public.projects_id_project_seq', 1, false);
 
 
 --
--- Name: property_listing_id_property_seq; Type: SEQUENCE SET; Schema: public; Owner: -
---
-
-SELECT pg_catalog.setval('public.property_listing_id_property_seq', 1, false);
-
-
---
--- Name: quiz_results_id_quiz_seq; Type: SEQUENCE SET; Schema: public; Owner: -
---
-
-SELECT pg_catalog.setval('public.quiz_results_id_quiz_seq', 1, false);
-
-
---
 -- Name: restexamplecrud_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
@@ -423,13 +243,6 @@ SELECT pg_catalog.setval('public.restexamplecrud_id_seq', 1, false);
 --
 
 SELECT pg_catalog.setval('public.ruangan_id_ruangan_seq', 4, true);
-
-
---
--- Name: vocabulary_id_vocab_seq; Type: SEQUENCE SET; Schema: public; Owner: -
---
-
-SELECT pg_catalog.setval('public.vocabulary_id_vocab_seq', 44, true);
 
 
 --

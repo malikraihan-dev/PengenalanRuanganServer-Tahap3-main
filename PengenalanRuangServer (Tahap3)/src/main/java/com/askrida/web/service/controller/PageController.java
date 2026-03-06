@@ -175,10 +175,9 @@ public class PageController {
     }
 
     // ===== ADMIN-ONLY PAGES =====
-    // NOTE: /property, /project, /language, /chatbot, /music, /expense
+    // NOTE: /project, /chatbot, /expense
     //       are handled by their own controllers
-    //       (PropertyController, ProjectController, LanguageController,
-    //        ChatController, MusicController, ExpenseController)
+    //       (ProjectController, ChatController, ExpenseController)
 
     // ===== LOGIN & LOGOUT =====
     @GetMapping("/login")
