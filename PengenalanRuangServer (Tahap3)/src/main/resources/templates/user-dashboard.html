@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard User - RuangServer</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
     <style>
         :root {
             --bg: #f5f6fa;
@@ -1140,8 +1140,23 @@
         setInterval(updateClock, 1000);
         updateTopbarDate();
         loadUserProfile();
-        loadFaceApi();
+        initFaceApi();
     });
+
+    async function initFaceApi() {
+        // Wait until faceapi global is available
+        let waited = 0;
+        while (typeof faceapi === 'undefined' && waited < 15000) {
+            await new Promise(r => setTimeout(r, 500));
+            waited += 500;
+        }
+        if (typeof faceapi === 'undefined') {
+            console.error('face-api.js failed to load from CDN');
+            showToast('Library Face API gagal dimuat. Coba refresh halaman.', 'error');
+            return;
+        }
+        await loadFaceApi();
+    }
 
     // ===== CLOCK =====
     function updateClock() {
@@ -1172,18 +1187,37 @@
     }
 
     // ===== FACE API =====
+    const MODEL_URLS = [
+        'https://justadudewhohacks.github.io/face-api.js/models',
+        'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights',
+        'https://cdn.jsdelivr.net/gh/nicehash/nicehash-face-api@master/weights'
+    ];
+
     async function loadFaceApi() {
-        try {
-            const MODEL_URL = 'https://cdn.jsdelivr.net/gh/nicehash/nicehash-face-api@master/weights';
-            await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
-            await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
-            await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
-            await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
-            faceApiLoaded = true;
-            await loadAllFaceDescriptors();
-        } catch (e) {
-            console.error('Failed to load face-api:', e);
+        showToast('Memuat model Face API...', 'info');
+        for (const url of MODEL_URLS) {
+            try {
+                console.log('Trying model URL:', url);
+                await faceapi.nets.tinyFaceDetector.loadFromUri(url);
+                await faceapi.nets.faceLandmark68Net.loadFromUri(url);
+                await faceapi.nets.faceRecognitionNet.loadFromUri(url);
+                await faceapi.nets.ssdMobilenetv1.loadFromUri(url);
+                faceApiLoaded = true;
+                console.log('Face API models loaded from:', url);
+                showToast('Face API siap digunakan!', 'success');
+                await loadAllFaceDescriptors();
+                // Update camera status if already active
+                const statusEl = document.getElementById('attendStatus');
+                if (statusEl && attendStream) {
+                    statusEl.textContent = 'Kamera aktif. Siap untuk absensi wajah.';
+                }
+                return;
+            } catch (e) {
+                console.warn('Failed from ' + url + ':', e.message);
+            }
         }
+        console.error('All model URLs failed');
+        showToast('Gagal memuat model Face API. Kamera tetap bisa digunakan.', 'error');
     }
 
     async function loadAllFaceDescriptors() {
@@ -1483,7 +1517,10 @@
             navItems[sidebarMap[tab]].classList.add('active');
         }
 
-        if (tab === 'attendance') loadAttendanceStatus();
+        if (tab === 'attendance') {
+            loadAttendanceStatus();
+            startAttendCamera();
+        }
     }
 
     // ===== ATTENDANCE STATUS =====
@@ -1522,18 +1559,21 @@
 
     // ===== CAMERA =====
     async function startAttendCamera() {
-        if (!faceApiLoaded) {
-            showToast('Face API belum siap, mohon tunggu...', 'info');
-            return;
-        }
+        if (attendStream) return; // already active
         try {
             const video = document.getElementById('attendVideo');
             attendStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 640, height: 480 } });
             video.srcObject = attendStream;
+            await video.play();
             document.getElementById('btnStartAttendCam').style.display = 'none';
-            document.getElementById('attendStatus').textContent = 'Kamera aktif. Siap untuk absensi wajah.';
+            if (faceApiLoaded) {
+                document.getElementById('attendStatus').textContent = 'Kamera aktif. Siap untuk absensi wajah.';
+            } else {
+                document.getElementById('attendStatus').innerHTML = 'Kamera aktif. <span style="color:var(--warning)">Face API sedang dimuat...</span>';
+            }
         } catch (e) {
             showToast('Gagal mengakses kamera: ' + e.message, 'error');
+            console.error('Camera error:', e);
         }
     }
 
