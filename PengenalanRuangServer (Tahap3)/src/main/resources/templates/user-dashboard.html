@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard User - RuangServer</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
     <style>
         :root {
             --bg: #f5f6fa;
@@ -1140,8 +1140,26 @@
         setInterval(updateClock, 1000);
         updateTopbarDate();
         loadUserProfile();
-        loadFaceApi();
+        // Wait for faceapi to be available then load models
+        waitForFaceApi().then(() => loadFaceApi());
     });
+
+    function waitForFaceApi(maxWait = 15000) {
+        return new Promise((resolve, reject) => {
+            if (typeof faceapi !== 'undefined') { resolve(); return; }
+            const start = Date.now();
+            const check = setInterval(() => {
+                if (typeof faceapi !== 'undefined') {
+                    clearInterval(check);
+                    resolve();
+                } else if (Date.now() - start > maxWait) {
+                    clearInterval(check);
+                    console.error('face-api.js library failed to load from CDN');
+                    reject(new Error('face-api.js not loaded'));
+                }
+            }, 300);
+        });
+    }
 
     // ===== CLOCK =====
     function updateClock() {
@@ -1172,18 +1190,46 @@
     }
 
     // ===== FACE API =====
+    const MODEL_URLS = [
+        'https://justadudewhohacks.github.io/face-api.js/models',
+        'https://cdn.jsdelivr.net/gh/nicehash/nicehash-face-api@master/weights',
+        'https://raw.githubusercontent.com/nicehash/nicehash-face-api/master/weights'
+    ];
+
+    async function tryLoadModels(url) {
+        console.log('Trying model URL:', url);
+        await faceapi.nets.tinyFaceDetector.loadFromUri(url);
+        await faceapi.nets.faceLandmark68Net.loadFromUri(url);
+        await faceapi.nets.faceRecognitionNet.loadFromUri(url);
+        await faceapi.nets.ssdMobilenetv1.loadFromUri(url);
+    }
+
     async function loadFaceApi() {
-        try {
-            const MODEL_URL = 'https://cdn.jsdelivr.net/gh/nicehash/nicehash-face-api@master/weights';
-            await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
-            await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
-            await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
-            await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
-            faceApiLoaded = true;
-            await loadAllFaceDescriptors();
-        } catch (e) {
-            console.error('Failed to load face-api:', e);
+        if (typeof faceapi === 'undefined') {
+            console.error('face-api.js library not available');
+            showToast('Library Face API gagal dimuat. Coba refresh halaman.', 'error');
+            return;
         }
+
+        showToast('Memuat model Face API...', 'info');
+
+        for (let i = 0; i < MODEL_URLS.length; i++) {
+            try {
+                await tryLoadModels(MODEL_URLS[i]);
+                faceApiLoaded = true;
+                console.log('Face API models loaded from:', MODEL_URLS[i]);
+                showToast('Face API siap digunakan!', 'success');
+                await loadAllFaceDescriptors();
+                updateAttendStatusAfterFaceApi();
+                return;
+            } catch (e) {
+                console.warn('Failed to load from ' + MODEL_URLS[i] + ':', e.message);
+            }
+        }
+
+        // All URLs failed
+        console.error('All model URLs failed');
+        showToast('Gagal memuat model Face API dari semua sumber. Coba refresh.', 'error');
     }
 
     async function loadAllFaceDescriptors() {
@@ -1483,7 +1529,11 @@
             navItems[sidebarMap[tab]].classList.add('active');
         }
 
-        if (tab === 'attendance') loadAttendanceStatus();
+        if (tab === 'attendance') {
+            loadAttendanceStatus();
+            // Auto-start camera when switching to attendance tab
+            startAttendCamera();
+        }
     }
 
     // ===== ATTENDANCE STATUS =====
@@ -1522,18 +1572,31 @@
 
     // ===== CAMERA =====
     async function startAttendCamera() {
-        if (!faceApiLoaded) {
-            showToast('Face API belum siap, mohon tunggu...', 'info');
-            return;
-        }
         try {
             const video = document.getElementById('attendVideo');
+            if (attendStream) {
+                // Camera already active
+                return;
+            }
             attendStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 640, height: 480 } });
             video.srcObject = attendStream;
+            await video.play();
             document.getElementById('btnStartAttendCam').style.display = 'none';
-            document.getElementById('attendStatus').textContent = 'Kamera aktif. Siap untuk absensi wajah.';
+            if (!faceApiLoaded) {
+                document.getElementById('attendStatus').innerHTML = 'Kamera aktif. <span style="color:var(--warning)">&#9888; Face API sedang dimuat...</span>';
+            } else {
+                document.getElementById('attendStatus').textContent = 'Kamera aktif. Siap untuk absensi wajah.';
+            }
         } catch (e) {
             showToast('Gagal mengakses kamera: ' + e.message, 'error');
+            console.error('Camera error:', e);
+        }
+    }
+
+    function updateAttendStatusAfterFaceApi() {
+        const statusEl = document.getElementById('attendStatus');
+        if (statusEl && attendStream) {
+            statusEl.textContent = 'Kamera aktif. Siap untuk absensi wajah.';
         }
     }
 
@@ -1554,6 +1617,8 @@
                     confidence = 1 - match.distance;
                 }
             } catch (e) { console.log('Face detection skipped:', e.message); }
+        } else if (!faceApiLoaded) {
+            console.log('Face API not loaded yet, proceeding without face verification');
         }
 
         try {
@@ -1592,6 +1657,8 @@
                     confidence = 1 - match.distance;
                 }
             } catch (e) { console.log('Face detection skipped:', e.message); }
+        } else if (!faceApiLoaded) {
+            console.log('Face API not loaded yet, proceeding without face verification');
         }
 
         try {
