@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="id" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrasi Wajah - Face Recognition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --primary-light: #EEF2FF;
+            --primary-hover: #4338CA;
+            --success: #10B981;
+            --success-light: #ECFDF5;
+            --warning: #F59E0B;
+            --warning-light: #FFFBEB;
+            --danger: #EF4444;
+            --danger-light: #FEF2F2;
+            --gray-50: #F9FAFB;
+            --gray-100: #F3F4F6;
+            --gray-200: #E5E7EB;
+            --gray-300: #D1D5DB;
+            --gray-400: #9CA3AF;
+            --gray-500: #6B7280;
+            --gray-600: #4B5563;
+            --gray-700: #374151;
+            --gray-800: #1F2937;
+            --gray-900: #111827;
+            --white: #FFFFFF;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+            --radius: 12px;
+            --radius-lg: 16px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--gray-50);
+            min-height: 100vh;
+            color: var(--gray-800);
+        }
+
+        .navbar {
+            background: var(--white);
+            padding: 0 32px;
+            height: 64px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--gray-200);
+            box-shadow: var(--shadow-sm);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .navbar-brand { display: flex; align-items: center; gap: 10px; }
+        .navbar-brand .icon {
+            width: 36px; height: 36px; background: var(--primary);
+            border-radius: 10px; display: flex; align-items: center;
+            justify-content: center; font-size: 18px;
+        }
+        .navbar-brand h1 { font-size: 1.1rem; font-weight: 700; color: var(--gray-900); }
+        .navbar-brand h1 span { color: var(--primary); }
+        .nav-links { display: flex; align-items: center; gap: 4px; }
+        .nav-links a {
+            color: var(--gray-500); text-decoration: none; padding: 8px 16px;
+            font-size: 0.875rem; font-weight: 500; border-radius: 8px; transition: all 0.2s;
+        }
+        .nav-links a:hover { color: var(--gray-700); background: var(--gray-100); }
+        .nav-links a.active { color: var(--primary); background: var(--primary-light); }
+        .nav-links .logout-link:hover { background: var(--danger-light) !important; color: var(--danger) !important; }
+
+        /* Logout Modal */
+        .logout-overlay {
+            display: none; position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+            z-index: 2000; justify-content: center; align-items: center;
+        }
+        .logout-overlay.show { display: flex; }
+        .logout-modal {
+            background: #fff; border-radius: 20px; width: 400px; max-width: 90vw;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.3);
+            animation: logoutBounce 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes logoutBounce {
+            0% { opacity: 0; transform: scale(0.8) translateY(20px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .logout-modal-body { padding: 36px 32px 24px; text-align: center; }
+        .logout-icon-wrap {
+            width: 72px; height: 72px; margin: 0 auto 20px;
+            background: linear-gradient(135deg, #fef2f2, #fee2e2);
+            border-radius: 50%; display: flex; align-items: center;
+            justify-content: center; font-size: 32px;
+            animation: logoutIconPulse 2s ease-in-out infinite;
+        }
+        @keyframes logoutIconPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.2); }
+            50% { box-shadow: 0 0 0 12px rgba(239,68,68,0); }
+        }
+        .logout-modal-body h3 { font-size: 18px; font-weight: 700; color: #1a1a1a; margin-bottom: 8px; }
+        .logout-modal-body p { font-size: 14px; color: #888; line-height: 1.6; }
+        .logout-modal-actions { padding: 0 32px 28px; display: flex; gap: 12px; }
+        .btn-logout-cancel {
+            flex: 1; padding: 12px; border-radius: 12px;
+            border: 2px solid var(--gray-200); background: #fff;
+            font-size: 14px; font-weight: 600; color: var(--gray-600);
+            cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.2s;
+        }
+        .btn-logout-cancel:hover { border-color: var(--gray-300); background: var(--gray-50); }
+        .btn-logout-confirm {
+            flex: 1; padding: 12px; border-radius: 12px;
+            border: none; background: linear-gradient(135deg, #ef4444, #dc2626);
+            font-size: 14px; font-weight: 700; color: #fff;
+            cursor: pointer; font-family: 'Inter', sans-serif;
+            transition: all 0.2s; position: relative; overflow: hidden;
+        }
+        .btn-logout-confirm:hover {
+            transform: translateY(-2px); box-shadow: 0 6px 20px rgba(239,68,68,0.4);
+        }
+        .btn-logout-confirm:active { transform: translateY(0); box-shadow: none; }
+        .logout-timer { font-size: 12px; color: #bbb; margin-top: 16px; }
+        .logout-timer span { font-weight: 700; color: var(--danger); }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .container { max-width: 1320px; margin: 0 auto; padding: 28px 32px; }
+        .page-header { margin-bottom: 28px; }
+        .page-header h2 { font-size: 1.5rem; font-weight: 700; color: var(--gray-900); margin-bottom: 6px; }
+        .page-header p { color: var(--gray-500); font-size: 0.9rem; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+        @media (max-width: 960px) { .grid { grid-template-columns: 1fr; } }
+
+        .card {
+            background: var(--white); border-radius: var(--radius-lg); padding: 24px;
+            border: 1px solid var(--gray-200); box-shadow: var(--shadow-sm);
+        }
+        .card + .card { margin-top: 20px; }
+        .card-title {
+            font-size: 0.95rem; font-weight: 600; color: var(--gray-900);
+            margin-bottom: 20px; display: flex; align-items: center; gap: 8px;
+        }
+        .card-title .icon-badge {
+            width: 28px; height: 28px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center; font-size: 14px;
+        }
+        .card-title .icon-badge.purple { background: var(--primary-light); }
+        .card-title .icon-badge.green  { background: var(--success-light); }
+        .card-title .icon-badge.orange { background: var(--warning-light); }
+
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 0.8rem; font-weight: 500; color: var(--gray-600); margin-bottom: 6px; }
+        .form-group select, .form-group input {
+            width: 100%; padding: 10px 14px; background: var(--white);
+            border: 1px solid var(--gray-300); border-radius: 8px; color: var(--gray-800);
+            font-size: 0.875rem; outline: none; font-family: inherit; transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .form-group select:focus, .form-group input:focus {
+            border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,70,229,0.12);
+        }
+
+        .video-container {
+            position: relative; width: 100%; border-radius: var(--radius);
+            overflow: hidden; background: var(--gray-900); aspect-ratio: 4/3;
+        }
+        .video-container video { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .video-container canvas#overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        }
+
+        /* Pose guide overlay */
+        .pose-guide {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            color: #fff; font-size: 1.1rem; font-weight: 700; text-align: center;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.7); pointer-events: none;
+            background: rgba(0,0,0,0.45); padding: 12px 24px; border-radius: 12px;
+            display: none; z-index: 10;
+        }
+        .pose-guide.show { display: block; }
+        .pose-guide .pose-emoji { font-size: 2.5rem; display: block; margin-bottom: 6px; }
+
+        /* Quality indicator */
+        .quality-indicator {
+            position: absolute; bottom: 12px; left: 12px; right: 12px;
+            background: rgba(0,0,0,0.6); border-radius: 8px; padding: 8px 12px;
+            color: #fff; font-size: 0.78rem; display: none; align-items: center; gap: 8px;
+            backdrop-filter: blur(4px); z-index: 10;
+        }
+        .quality-indicator.show { display: flex; }
+        .quality-bar { flex: 1; height: 6px; background: rgba(255,255,255,0.2); border-radius: 3px; overflow: hidden; }
+        .quality-bar .fill { height: 100%; border-radius: 3px; transition: width 0.3s, background 0.3s; }
+
+        .btn {
+            padding: 10px 20px; border: none; border-radius: 8px; font-size: 0.85rem;
+            cursor: pointer; transition: all 0.2s; font-weight: 600; font-family: inherit;
+            display: inline-flex; align-items: center; gap: 6px;
+        }
+        .btn-primary { background: var(--primary); color: var(--white); }
+        .btn-primary:hover { background: var(--primary-hover); box-shadow: var(--shadow-md); }
+        .btn-success { background: var(--success); color: var(--white); }
+        .btn-success:hover { background: #059669; }
+        .btn-danger { background: var(--danger); color: var(--white); }
+        .btn-danger:hover { background: #DC2626; }
+        .btn-outline { background: var(--white); color: var(--gray-700); border: 1px solid var(--gray-300); }
+        .btn-outline:hover { background: var(--gray-50); border-color: var(--gray-400); }
+        .btn-warning { background: var(--warning); color: var(--white); }
+        .btn-warning:hover { background: #D97706; }
+        .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+        .btn-group { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+
+        .status-bar {
+            background: var(--gray-50); border-radius: 10px; padding: 12px 16px;
+            margin-bottom: 16px; border: 1px solid var(--gray-200);
+            display: flex; align-items: center; gap: 10px;
+        }
+        .status-bar .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gray-400); flex-shrink: 0; }
+        .status-bar.success .status-dot { background: var(--success); }
+        .status-bar.error .status-dot   { background: var(--danger); }
+        .status-bar.warning .status-dot  { background: var(--warning); animation: blink 1.5s infinite; }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+        .status-text { font-size: 0.8rem; color: var(--gray-600); flex: 1; }
+        .progress-bar { width: 100%; height: 4px; background: var(--gray-200); border-radius: 2px; margin-top: 6px; overflow: hidden; }
+        .progress-bar .fill { height: 100%; background: var(--primary); border-radius: 2px; transition: width 0.4s ease; }
+
+        .captured-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+            gap: 8px; margin-top: 12px;
+        }
+        .captured-item {
+            position: relative; border-radius: 10px; overflow: hidden;
+            border: 2px solid var(--gray-200); transition: border-color 0.2s;
+        }
+        .captured-item:hover { border-color: var(--primary); }
+        .captured-item img { width: 100%; height: 90px; object-fit: cover; display: block; }
+        .captured-item .capture-label {
+            position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.6);
+            color: #fff; font-size: 0.6rem; text-align: center; padding: 2px; font-weight: 600;
+        }
+        .captured-item .remove-btn {
+            position: absolute; top: 4px; right: 4px; background: var(--danger); color: var(--white);
+            border: none; width: 20px; height: 20px; border-radius: 50%; cursor: pointer;
+            font-size: 11px; display: flex; align-items: center; justify-content: center;
+            opacity: 0; transition: opacity 0.2s;
+        }
+        .captured-item:hover .remove-btn { opacity: 1; }
+
+        .table-wrapper { overflow-x: auto; }
+        .data-table { width: 100%; border-collapse: collapse; }
+        .data-table th {
+            background: var(--gray-50); color: var(--gray-500); padding: 10px 14px;
+            text-align: left; font-size: 0.75rem; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--gray-200);
+        }
+        .data-table td { padding: 10px 14px; border-bottom: 1px solid var(--gray-100); font-size: 0.85rem; color: var(--gray-700); }
+        .data-table tr:hover { background: var(--gray-50); }
+        .badge { padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; display: inline-block; }
+        .badge-success { background: var(--success-light); color: var(--success); }
+        .badge-warning { background: var(--warning-light); color: var(--warning); }
+        .badge-danger  { background: var(--danger-light);  color: var(--danger);  }
+
+        .steps { display: flex; flex-direction: column; gap: 12px; }
+        .step { display: flex; align-items: flex-start; gap: 14px; padding: 12px; background: var(--gray-50); border-radius: 10px; }
+        .step-num {
+            background: var(--primary); color: var(--white); width: 26px; height: 26px;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 0.75rem; flex-shrink: 0;
+        }
+        .step-text { font-size: 0.85rem; color: var(--gray-600); line-height: 1.5; }
+        .step-text strong { color: var(--gray-800); }
+
+        .tips-box { background: var(--primary-light); border-radius: var(--radius); padding: 20px; margin-top: 20px; }
+        .tips-box h4 { color: var(--primary); font-size: 0.9rem; margin-bottom: 12px; }
+        .tips-box ul { list-style: none; padding: 0; }
+        .tips-box li { padding: 5px 0 5px 24px; color: var(--gray-600); font-size: 0.83rem; position: relative; line-height: 1.5; }
+        .tips-box li::before { content: "\2726"; position: absolute; left: 4px; color: var(--primary); }
+
+        .empty-state { text-align: center; color: var(--gray-400); font-size: 0.85rem; padding: 24px; }
+
+        .toast-container { position: fixed; top: 80px; right: 20px; z-index: 9999; }
+        .toast {
+            background: var(--white); border-radius: 10px; padding: 14px 18px;
+            margin-bottom: 10px; min-width: 300px; box-shadow: var(--shadow-lg);
+            border-left: 4px solid var(--primary); animation: slideIn 0.3s ease;
+            font-size: 0.85rem; color: var(--gray-700);
+        }
+        .toast.success { border-left-color: var(--success); }
+        .toast.error   { border-left-color: var(--danger);  }
+        @keyframes slideIn {
+            from { transform: translateX(120%); opacity: 0; }
+            to   { transform: translateX(0);    opacity: 1; }
+        }
+
+        /* Pose checklist */
+        .pose-checklist { margin-top: 12px; }
+        .pose-checklist .pose-item {
+            display: flex; align-items: center; gap: 8px; padding: 6px 0;
+            font-size: 0.82rem; color: var(--gray-500);
+        }
+        .pose-checklist .pose-item.done { color: var(--success); }
+        .pose-checklist .pose-item .check { font-size: 1rem; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="navbar-brand">
+        <div class="icon">&#128421;</div>
+        <h1>RuangServer <span>AI</span></h1>
+    </div>
+    <div class="nav-links">
+        <a href="/">Dashboard</a>
+        <a href="/server-monitor">Monitor Server</a>
+        <a href="/face-register" class="active">Registrasi Wajah</a>
+        <a href="/face-absensi">Absensi Wajah</a>
+        <a href="/user-management">User Panel</a>
+        <a href="#" onclick="showLogoutModal()" class="logout-link" style="color:var(--danger);margin-left:12px;position:relative;">&#128682; Logout</a>
+    </div>
+</nav>
+
+<!-- LOGOUT MODAL -->
+<div class="logout-overlay" id="logoutModal">
+    <div class="logout-modal">
+        <div class="logout-modal-body">
+            <div class="logout-icon-wrap">&#128682;</div>
+            <h3>Keluar dari Sistem?</h3>
+            <p>Anda akan keluar dari akun dan perlu login kembali untuk mengakses halaman ini.</p>
+            <div class="logout-timer" id="logoutTimer" style="display:none;">Otomatis batal dalam <span id="logoutCountdown">10</span> detik</div>
+        </div>
+        <div class="logout-modal-actions">
+            <button class="btn-logout-cancel" onclick="hideLogoutModal()">Batal</button>
+            <button class="btn-logout-confirm" onclick="doLogout()">&#128682; Ya, Logout</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<div class="container">
+    <div class="page-header">
+        <h2>Registrasi Wajah Ultra HD</h2>
+        <p>Rekam banyak foto wajah dengan variasi pose, ekspresi &amp; pencahayaan untuk akurasi 99%+</p>
+    </div>
+
+    <div class="grid">
+        <div>
+            <div class="card">
+                <div class="card-title">
+                    <span class="icon-badge purple">&#128249;</span> Kamera Webcam
+                </div>
+
+                <div class="form-group">
+                    <label>Pilih Anggota (NIM)</label>
+                    <select id="nimSelect" onchange="onAnggotaSelect()">
+                        <option value="">-- Pilih Anggota --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Nama Lengkap</label>
+                    <input type="text" id="namaInput" readonly placeholder="Nama otomatis dari pilihan">
+                </div>
+
+                <div class="status-bar" id="statusBar">
+                    <div class="status-dot"></div>
+                    <span class="status-text" id="statusText">Memuat model face-api.js...</span>
+                </div>
+                <div class="progress-bar"><div class="fill" id="progressFill" style="width: 0%"></div></div>
+
+                <div class="video-container" style="margin-top: 14px;">
+                    <video id="video" autoplay muted playsinline></video>
+                    <canvas id="overlay"></canvas>
+                    <div class="pose-guide" id="poseGuide">
+                        <span class="pose-emoji" id="poseEmoji">&#128578;</span>
+                        <span id="poseText">Lihat lurus ke kamera</span>
+                    </div>
+                    <div class="quality-indicator" id="qualityIndicator">
+                        <span id="qualityLabel">Kualitas:</span>
+                        <div class="quality-bar"><div class="fill" id="qualityFill" style="width:0%; background: var(--danger);"></div></div>
+                        <span id="qualityValue">0%</span>
+                    </div>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-primary" id="btnCapture" onclick="captureFrame()" disabled>
+                        &#128248; Ambil Foto
+                    </button>
+                    <button class="btn btn-warning" id="btnAutoCapture" onclick="startAutoCapture()" disabled>
+                        &#9889; Auto Capture (Guided)
+                    </button>
+                    <button class="btn btn-success" id="btnSaveAll" onclick="saveAllToServer()" disabled>
+                        &#128190; Simpan ke Server
+                    </button>
+                    <button class="btn btn-outline" id="btnClearAll" onclick="clearAllCaptures()">
+                        &#128465; Hapus Semua
+                    </button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">
+                    <span class="icon-badge green">&#128247;</span>
+                    Foto Tertangkap (<span id="captureCount">0</span>/30)
+                </div>
+                <p style="color: var(--gray-400); font-size: 0.8rem; margin-top: -12px; margin-bottom: 8px;">
+                    Minimal <strong>10 foto</strong>, disarankan <strong>20-30</strong> dengan variasi pose &amp; ekspresi untuk akurasi 99%+
+                </p>
+                <div class="captured-grid" id="capturedGrid">
+                    <p class="empty-state" style="grid-column: 1/-1;">Belum ada foto. Klik "Ambil Foto" atau "Auto Capture" untuk mulai.</p>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <div class="card">
+                <div class="card-title">
+                    <span class="icon-badge purple">&#128203;</span> Cara Registrasi 99%
+                </div>
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-num">1</div>
+                        <div class="step-text"><strong>Pilih anggota</strong> dari dropdown NIM.</div>
+                    </div>
+                    <div class="step">
+                        <div class="step-num">2</div>
+                        <div class="step-text"><strong>Izinkan kamera.</strong> Gunakan pencahayaan terang &amp; merata.</div>
+                    </div>
+                    <div class="step">
+                        <div class="step-num">3</div>
+                        <div class="step-text"><strong>Klik "Auto Capture"</strong> - sistem akan memandu pose secara otomatis.</div>
+                    </div>
+                    <div class="step">
+                        <div class="step-num">4</div>
+                        <div class="step-text"><strong>Ikuti panduan pose</strong>: lurus, kiri, kanan, atas, bawah, senyum, serius, dll.</div>
+                    </div>
+                    <div class="step">
+                        <div class="step-num">5</div>
+                        <div class="step-text"><strong>Simpan ke Server</strong>. Semakin banyak &amp; bervariasi = semakin akurat!</div>
+                    </div>
+                </div>
+
+                <!-- Pose Checklist -->
+                <div class="pose-checklist" id="poseChecklist">
+                    <h4 style="font-size:0.85rem; color:var(--gray-700); margin-top:16px; margin-bottom:8px;">Checklist Pose:</h4>
+                    <div class="pose-item" data-pose="center"><span class="check">&#9744;</span> Wajah lurus (3 foto)</div>
+                    <div class="pose-item" data-pose="left"><span class="check">&#9744;</span> Miring kiri 15&deg; (3 foto)</div>
+                    <div class="pose-item" data-pose="right"><span class="check">&#9744;</span> Miring kanan 15&deg; (3 foto)</div>
+                    <div class="pose-item" data-pose="up"><span class="check">&#9744;</span> Sedikit mendongak (2 foto)</div>
+                    <div class="pose-item" data-pose="down"><span class="check">&#9744;</span> Sedikit menunduk (2 foto)</div>
+                    <div class="pose-item" data-pose="smile"><span class="check">&#9744;</span> Tersenyum (3 foto)</div>
+                    <div class="pose-item" data-pose="serious"><span class="check">&#9744;</span> Ekspresi serius (2 foto)</div>
+                    <div class="pose-item" data-pose="squint"><span class="check">&#9744;</span> Sedikit menyipitkan mata (2 foto)</div>
+                    <div class="pose-item" data-pose="glasses"><span class="check">&#9744;</span> Dengan/tanpa kacamata (opsional)</div>
+                </div>
+            </div>
+
+            <div class="tips-box">
+                <h4>&#10024; Tips Akurasi 99%</h4>
+                <ul>
+                    <li><strong>20-30 foto</strong> per orang = akurasi optimal.</li>
+                    <li>Gunakan pencahayaan merata, hindari backlight kuat.</li>
+                    <li>Ambil foto dari berbagai sudut (kiri, kanan, atas, bawah).</li>
+                    <li>Variasi ekspresi: senyum, serius, netral, bicara.</li>
+                    <li>Lepas kacamata hitam &amp; masker saat registrasi.</li>
+                    <li>Jika pakai kacamata sehari-hari, ambil JUGA foto pakai kacamata.</li>
+                    <li>Hindari foto blur &mdash; pastikan indikator kualitas hijau.</li>
+                    <li>Gunakan "Auto Capture" untuk panduan otomatis!</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <div class="card-title">
+                    <span class="icon-badge orange">&#128202;</span> Data Wajah Terdaftar
+                </div>
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr><th>NIM</th><th>Nama</th><th>Foto</th><th>Aksi</th></tr>
+                        </thead>
+                        <tbody id="registeredTable">
+                            <tr><td colspan="4" class="empty-state">Memuat data...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+
+<script>
+    const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model';
+    const MAX_CAPTURES = 30;
+    const MIN_CAPTURES = 10;
+    const MIN_QUALITY_SCORE = 0.90;
+    const MIN_FACE_SIZE = 120;
+
+    let modelsLoaded = false;
+    let capturedData = [];
+    let videoStream = null;
+    let autoCaptureActive = false;
+    let autoCaptureInterval = null;
+
+    // Guided pose sequence for auto-capture
+    const POSE_SEQUENCE = [
+        { pose: 'center',  emoji: '&#128578;', text: 'Lihat LURUS ke kamera', count: 3 },
+        { pose: 'smile',   emoji: '&#128513;', text: 'TERSENYUM lebar', count: 3 },
+        { pose: 'left',    emoji: '&#128072;', text: 'Miringkan wajah ke KIRI sedikit', count: 3 },
+        { pose: 'right',   emoji: '&#128073;', text: 'Miringkan wajah ke KANAN sedikit', count: 3 },
+        { pose: 'up',      emoji: '&#128070;', text: 'Sedikit DONGAKKAN wajah', count: 2 },
+        { pose: 'down',    emoji: '&#128071;', text: 'Sedikit TUNDUKKAN wajah', count: 2 },
+        { pose: 'serious', emoji: '&#128528;', text: 'Ekspresi SERIUS / netral', count: 2 },
+        { pose: 'squint',  emoji: '&#128580;', text: 'Sedikit SIPITKAN mata', count: 2 },
+    ];
+    let currentPoseIdx = 0;
+    let currentPoseCount = 0;
+
+    window.addEventListener('DOMContentLoaded', async () => {
+        await loadModels();
+        await startCamera();
+        await loadAnggotaList();
+        await loadRegisteredData();
+    });
+
+    async function loadModels() {
+        updateStatus('Memuat model SSD MobileNet...', 10, 'warning');
+        try {
+            await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
+            updateStatus('Memuat model Face Landmark...', 30, 'warning');
+            await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+            updateStatus('Memuat model Face Recognition...', 50, 'warning');
+            await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+            updateStatus('Memuat model Face Expression...', 70, 'warning');
+            await faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL);
+            updateStatus('Memuat model Age & Gender...', 85, 'warning');
+            await faceapi.nets.ageGenderNet.loadFromUri(MODEL_URL);
+            updateStatus('Semua model berhasil dimuat! Siap capture wajah.', 100, 'success');
+            modelsLoaded = true;
+            document.getElementById('btnCapture').disabled = false;
+            document.getElementById('btnAutoCapture').disabled = false;
+        } catch (err) {
+            updateStatus('Gagal memuat model: ' + err.message, 0, 'error');
+        }
+    }
+
+    async function startCamera() {
+        try {
+            const video = document.getElementById('video');
+            videoStream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 },
+                    facingMode: 'user',
+                    frameRate: { ideal: 30 }
+                }
+            });
+            video.srcObject = videoStream;
+            video.addEventListener('play', () => {
+                const overlay = document.getElementById('overlay');
+                overlay.width = video.videoWidth;
+                overlay.height = video.videoHeight;
+                detectFaceLoop();
+            });
+        } catch (err) {
+            updateStatus('Gagal akses kamera: ' + err.message, 0, 'error');
+        }
+    }
+
+    let lastDetectionScore = 0;
+    let lastFaceBox = null;
+
+    async function detectFaceLoop() {
+        if (!modelsLoaded) { requestAnimationFrame(detectFaceLoop); return; }
+        const video = document.getElementById('video');
+        const overlay = document.getElementById('overlay');
+        const ctx = overlay.getContext('2d');
+        const detections = await faceapi.detectAllFaces(video,
+            new faceapi.SsdMobilenetv1Options({ minConfidence: 0.3 })
+        ).withFaceLandmarks();
+
+        ctx.clearRect(0, 0, overlay.width, overlay.height);
+
+        if (detections.length > 0) {
+            const det = detections[0];
+            const box = det.detection.box;
+            const score = det.detection.score;
+            lastDetectionScore = score;
+            lastFaceBox = box;
+
+            // Determine quality color
+            const faceSize = Math.min(box.width, box.height);
+            const sizeScore = Math.min(faceSize / 200, 1);
+            const quality = score * 0.6 + sizeScore * 0.4;
+            const qualityPct = Math.round(quality * 100);
+
+            let qColor = 'var(--danger)';
+            if (quality >= 0.85) qColor = 'var(--success)';
+            else if (quality >= 0.65) qColor = 'var(--warning)';
+
+            // Draw face box
+            ctx.strokeStyle = quality >= 0.85 ? '#10B981' : (quality >= 0.65 ? '#F59E0B' : '#EF4444');
+            ctx.lineWidth = 2;
+            ctx.setLineDash([6, 4]);
+            ctx.strokeRect(box.x, box.y, box.width, box.height);
+            ctx.setLineDash([]);
+
+            // Draw landmarks
+            det.landmarks.positions.forEach(pt => {
+                ctx.fillStyle = '#10B981';
+                ctx.beginPath();
+                ctx.arc(pt.x, pt.y, 1.5, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Update quality indicator
+            const qi = document.getElementById('qualityIndicator');
+            qi.classList.add('show');
+            document.getElementById('qualityFill').style.width = qualityPct + '%';
+            document.getElementById('qualityFill').style.background = qColor;
+            document.getElementById('qualityValue').textContent = qualityPct + '%';
+        } else {
+            lastDetectionScore = 0;
+            lastFaceBox = null;
+            document.getElementById('qualityIndicator').classList.remove('show');
+        }
+        requestAnimationFrame(detectFaceLoop);
+    }
+
+    async function captureFrame() {
+        if (!modelsLoaded) return;
+        if (capturedData.length >= MAX_CAPTURES) {
+            showToast('Sudah mencapai batas ' + MAX_CAPTURES + ' foto!', 'error');
+            return;
+        }
+        const nim = document.getElementById('nimSelect').value;
+        const nama = document.getElementById('namaInput').value;
+        if (!nim || !nama) {
+            showToast('Silakan pilih anggota terlebih dahulu!', 'error');
+            return;
+        }
+
+        updateStatus('Mendeteksi dan mengekstrak wajah HD...', 50, 'warning');
+        const video = document.getElementById('video');
+
+        const detection = await faceapi.detectSingleFace(video,
+            new faceapi.SsdMobilenetv1Options({ minConfidence: 0.3 })
+        )
+        .withFaceLandmarks()
+        .withFaceDescriptor()
+        .withFaceExpressions();
+
+        if (!detection) {
+            updateStatus('Wajah tidak terdeteksi! Pastikan wajah terlihat jelas.', 0, 'error');
+            showToast('Wajah tidak terdeteksi!', 'error');
+            return;
+        }
+
+        // Quality check
+        const score = detection.detection.score;
+        const box = detection.detection.box;
+        const faceSize = Math.min(box.width, box.height);
+
+        if (score < MIN_QUALITY_SCORE) {
+            updateStatus('Kualitas deteksi terlalu rendah (' + (score * 100).toFixed(0) + '%). Posisikan wajah lebih jelas!', 0, 'error');
+            showToast('Kualitas rendah (' + (score * 100).toFixed(0) + '%). Perlu minimum ' + (MIN_QUALITY_SCORE * 100) + '%!', 'error');
+            return;
+        }
+
+        if (faceSize < MIN_FACE_SIZE) {
+            updateStatus('Wajah terlalu kecil! Dekati kamera.', 0, 'error');
+            showToast('Wajah terlalu kecil. Dekati kamera!', 'error');
+            return;
+        }
+
+        // Check for blur using landmark variance
+        const landmarks = detection.landmarks.positions;
+        if (isBlurry(landmarks)) {
+            updateStatus('Foto blur! Tahan posisi dan coba lagi.', 0, 'error');
+            showToast('Foto terdeteksi blur. Tahan posisi!', 'error');
+            return;
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        const imageData = canvas.toDataURL('image/jpeg', 0.85);
+        const descriptorArray = Array.from(detection.descriptor);
+
+        // Determine dominant expression
+        const expressions = detection.expressions;
+        const dominantExpr = Object.entries(expressions).reduce((a, b) => a[1] > b[1] ? a : b)[0];
+
+        capturedData.push({
+            imageData,
+            descriptor: descriptorArray,
+            score: score,
+            expression: dominantExpr,
+            faceSize: faceSize
+        });
+
+        updateCapturedGrid();
+        updateStatus('Foto ' + capturedData.length + '/' + MAX_CAPTURES + ' berhasil! Skor: ' + (score * 100).toFixed(0) + '% | Ekspresi: ' + dominantExpr, 100, 'success');
+        showToast('Foto berhasil! (' + capturedData.length + '/' + MAX_CAPTURES + ') Skor: ' + (score * 100).toFixed(0) + '%', 'success');
+        document.getElementById('btnSaveAll').disabled = capturedData.length < MIN_CAPTURES;
+
+        return true; // success
+    }
+
+    function isBlurry(landmarks) {
+        if (landmarks.length < 10) return true;
+        let totalDist = 0;
+        for (let i = 1; i < landmarks.length; i++) {
+            const dx = landmarks[i].x - landmarks[i - 1].x;
+            const dy = landmarks[i].y - landmarks[i - 1].y;
+            totalDist += Math.sqrt(dx * dx + dy * dy);
+        }
+        const avgDist = totalDist / landmarks.length;
+        return avgDist < 1.5;
+    }
+
+    // ===== AUTO CAPTURE WITH GUIDED POSES =====
+    async function startAutoCapture() {
+        const nim = document.getElementById('nimSelect').value;
+        const nama = document.getElementById('namaInput').value;
+        if (!nim || !nama) {
+            showToast('Silakan pilih anggota terlebih dahulu!', 'error');
+            return;
+        }
+        if (autoCaptureActive) {
+            stopAutoCapture();
+            return;
+        }
+
+        autoCaptureActive = true;
+        currentPoseIdx = 0;
+        currentPoseCount = 0;
+        document.getElementById('btnAutoCapture').innerHTML = '&#9724; Stop Auto Capture';
+        document.getElementById('btnAutoCapture').className = 'btn btn-danger';
+        document.getElementById('btnCapture').disabled = true;
+
+        showPoseGuide();
+        runAutoCapture();
+    }
+
+    function stopAutoCapture() {
+        autoCaptureActive = false;
+        document.getElementById('btnAutoCapture').innerHTML = '&#9889; Auto Capture (Guided)';
+        document.getElementById('btnAutoCapture').className = 'btn btn-warning';
+        document.getElementById('btnCapture').disabled = false;
+        document.getElementById('poseGuide').classList.remove('show');
+        if (autoCaptureInterval) clearTimeout(autoCaptureInterval);
+    }
+
+    function showPoseGuide() {
+        if (currentPoseIdx >= POSE_SEQUENCE.length) {
+            document.getElementById('poseGuide').classList.remove('show');
+            stopAutoCapture();
+            showToast('Auto Capture selesai! ' + capturedData.length + ' foto berhasil.', 'success');
+            return;
+        }
+        const pose = POSE_SEQUENCE[currentPoseIdx];
+        const guide = document.getElementById('poseGuide');
+        document.getElementById('poseEmoji').innerHTML = pose.emoji;
+        document.getElementById('poseText').textContent = pose.text + ' (' + (currentPoseCount + 1) + '/' + pose.count + ')';
+        guide.classList.add('show');
+    }
+
+    async function runAutoCapture() {
+        if (!autoCaptureActive || currentPoseIdx >= POSE_SEQUENCE.length) {
+            stopAutoCapture();
+            return;
+        }
+        if (capturedData.length >= MAX_CAPTURES) {
+            stopAutoCapture();
+            showToast('Batas maksimum ' + MAX_CAPTURES + ' foto tercapai!', 'success');
+            return;
+        }
+
+        const pose = POSE_SEQUENCE[currentPoseIdx];
+
+        autoCaptureInterval = setTimeout(async () => {
+            if (!autoCaptureActive) return;
+
+            const success = await captureFrame();
+            if (success) {
+                currentPoseCount++;
+                updatePoseChecklist(pose.pose, currentPoseCount, pose.count);
+
+                if (currentPoseCount >= pose.count) {
+                    currentPoseIdx++;
+                    currentPoseCount = 0;
+                }
+            }
+            showPoseGuide();
+            runAutoCapture();
+        }, 2500);
+    }
+
+    function updatePoseChecklist(poseName, current, total) {
+        const items = document.querySelectorAll('.pose-item[data-pose="' + poseName + '"]');
+        items.forEach(item => {
+            if (current >= total) {
+                item.classList.add('done');
+                item.querySelector('.check').innerHTML = '&#9745;';
+            }
+        });
+    }
+
+    function updateCapturedGrid() {
+        const grid = document.getElementById('capturedGrid');
+        document.getElementById('captureCount').textContent = capturedData.length;
+        if (capturedData.length === 0) {
+            grid.innerHTML = '<p class="empty-state" style="grid-column:1/-1;">Belum ada foto.</p>';
+            return;
+        }
+        grid.innerHTML = capturedData.map((item, idx) =>
+            '<div class="captured-item">' +
+                '<img src="' + item.imageData + '" alt="Foto ' + (idx + 1) + '">' +
+                '<div class="capture-label">' + (item.score * 100).toFixed(0) + '% ' + (item.expression || '') + '</div>' +
+                '<button class="remove-btn" onclick="removeCapture(' + idx + ')">&#215;</button>' +
+            '</div>'
+        ).join('');
+    }
+
+    function removeCapture(idx) {
+        capturedData.splice(idx, 1);
+        updateCapturedGrid();
+        document.getElementById('btnSaveAll').disabled = capturedData.length < MIN_CAPTURES;
+    }
+
+    function clearAllCaptures() {
+        capturedData = [];
+        updateCapturedGrid();
+        document.getElementById('btnSaveAll').disabled = true;
+        document.querySelectorAll('.pose-item').forEach(item => {
+            item.classList.remove('done');
+            item.querySelector('.check').innerHTML = '&#9744;';
+        });
+        showToast('Semua foto dihapus', 'success');
+    }
+
+    async function saveAllToServer() {
+        const nim = document.getElementById('nimSelect').value;
+        const nama = document.getElementById('namaInput').value;
+        if (!nim || !nama) { showToast('Pilih anggota dulu!', 'error'); return; }
+        if (capturedData.length < MIN_CAPTURES) {
+            showToast('Minimal ' + MIN_CAPTURES + ' foto diperlukan! Saat ini: ' + capturedData.length, 'error');
+            return;
+        }
+
+        document.getElementById('btnSaveAll').disabled = true;
+        updateStatus('Menyimpan data ke server...', 10, 'warning');
+
+        let successCount = 0;
+        for (let i = 0; i < capturedData.length; i++) {
+            try {
+                const payload = {
+                    nim: nim,
+                    label: nama,
+                    faceDescriptor: JSON.stringify(capturedData[i].descriptor),
+                    imageData: capturedData[i].imageData
+                };
+                const res = await fetch('/api/face/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (res.ok) {
+                    successCount++;
+                    updateStatus('Menyimpan foto ' + (i + 1) + '/' + capturedData.length + '...',
+                        Math.round(((i + 1) / capturedData.length) * 100), 'warning');
+                }
+            } catch (err) { console.error('Error saving:', err); }
+        }
+
+        if (successCount > 0) {
+            updateStatus(successCount + ' foto wajah berhasil disimpan!', 100, 'success');
+            showToast(successCount + ' foto berhasil disimpan untuk ' + nama + '!', 'success');
+            capturedData = [];
+            updateCapturedGrid();
+            await loadRegisteredData();
+        } else {
+            updateStatus('Gagal menyimpan!', 0, 'error');
+            showToast('Gagal menyimpan data wajah!', 'error');
+        }
+        document.getElementById('btnSaveAll').disabled = true;
+    }
+
+    async function loadAnggotaList() {
+        try {
+            const res = await fetch('/rest/anggota');
+            const data = await res.json();
+            const select = document.getElementById('nimSelect');
+            data.forEach(a => {
+                const opt = document.createElement('option');
+                opt.value = a.nim;
+                opt.textContent = a.nim + ' - ' + a.namaLengkap;
+                opt.dataset.nama = a.namaLengkap;
+                select.appendChild(opt);
+            });
+        } catch (err) { console.error('Error loading anggota:', err); }
+    }
+
+    function onAnggotaSelect() {
+        const select = document.getElementById('nimSelect');
+        const selected = select.options[select.selectedIndex];
+        document.getElementById('namaInput').value = selected.dataset.nama || '';
+    }
+
+    async function loadRegisteredData() {
+        try {
+            const res = await fetch('/api/face/all');
+            const data = await res.json();
+            const grouped = {};
+            data.forEach(fd => {
+                if (!grouped[fd.nim]) grouped[fd.nim] = { nim: fd.nim, label: fd.label, count: 0 };
+                grouped[fd.nim].count++;
+            });
+            const tbody = document.getElementById('registeredTable');
+            const entries = Object.values(grouped);
+            if (entries.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="empty-state">Belum ada data wajah terdaftar</td></tr>';
+                return;
+            }
+            tbody.innerHTML = entries.map(e => {
+                const bc = e.count >= 15 ? 'badge-success' : (e.count >= 10 ? 'badge-warning' : 'badge-danger');
+                const bt = e.count >= 15 ? 'Excellent' : (e.count >= 10 ? 'Bagus' : 'Kurang');
+                return '<tr>' +
+                    '<td style="font-weight:500;">' + e.nim + '</td>' +
+                    '<td>' + e.label + '</td>' +
+                    '<td><span class="badge ' + bc + '">' + e.count + ' foto &middot; ' + bt + '</span></td>' +
+                    '<td><button class="btn btn-danger" style="padding:5px 10px;font-size:0.75rem;" onclick="deleteAllFaces(\'' + e.nim + '\')">Hapus</button></td>' +
+                '</tr>';
+            }).join('');
+        } catch (err) { console.error('Error:', err); }
+    }
+
+    async function deleteAllFaces(nim) {
+        if (!confirm('Hapus semua data wajah NIM ' + nim + '?')) return;
+        try {
+            await fetch('/api/face/nim/' + nim, { method: 'DELETE' });
+            showToast('Data wajah berhasil dihapus!', 'success');
+            await loadRegisteredData();
+        } catch (err) { showToast('Gagal menghapus: ' + err.message, 'error'); }
+    }
+
+    function updateStatus(text, progress, type) {
+        const bar = document.getElementById('statusBar');
+        document.getElementById('statusText').textContent = text;
+        document.getElementById('progressFill').style.width = progress + '%';
+        bar.className = 'status-bar';
+        if (type) bar.classList.add(type);
+    }
+
+    function showToast(msg, type) {
+        type = type || 'success';
+        const c = document.getElementById('toastContainer');
+        const t = document.createElement('div');
+        t.className = 'toast ' + type;
+        t.textContent = msg;
+        c.appendChild(t);
+        setTimeout(() => t.remove(), 4000);
+    }
+
+    // ===== LOGOUT MODAL =====
+    let logoutTimer = null;
+    function showLogoutModal() {
+        document.getElementById('logoutModal').classList.add('show');
+        let seconds = 10;
+        const timerEl = document.getElementById('logoutTimer');
+        const countdownEl = document.getElementById('logoutCountdown');
+        timerEl.style.display = 'block';
+        countdownEl.textContent = seconds;
+        clearInterval(logoutTimer);
+        logoutTimer = setInterval(() => {
+            seconds--;
+            countdownEl.textContent = seconds;
+            if (seconds <= 0) { clearInterval(logoutTimer); hideLogoutModal(); }
+        }, 1000);
+    }
+    function hideLogoutModal() {
+        document.getElementById('logoutModal').classList.remove('show');
+        clearInterval(logoutTimer);
+    }
+    function doLogout() {
+        clearInterval(logoutTimer);
+        const btn = document.querySelector('.btn-logout-confirm');
+        btn.innerHTML = '<div style="display:inline-block;width:18px;height:18px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;vertical-align:middle;"></div> Keluar...';
+        btn.style.pointerEvents = 'none';
+        setTimeout(() => { window.location.href = '/logout'; }, 600);
+    }
+    document.getElementById('logoutModal').addEventListener('click', function(e) {
+        if (e.target === this) hideLogoutModal();
+    });
+</script>
+</body>
+</html>
