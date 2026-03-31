@@ -265,7 +265,7 @@
         .stat-card-dot {
             position: relative;
             padding: 0.5rem;
-            background-color: #10B981;
+            background: linear-gradient(135deg, var(--warning), var(--success));
             width: 1.5rem;
             height: 1.5rem;
             border-radius: 9999px;
@@ -278,14 +278,14 @@
 
         .stat-card-title-text {
             margin-left: 0.5rem;
-            color: #374151;
+            color: var(--text);
             font-size: 16px;
             font-weight: 600;
         }
 
         .stat-card-percent {
             margin-left: 0.5rem;
-            color: #02972f;
+            color: var(--success);
             font-weight: 600;
             font-size: 13px;
             display: flex;
@@ -302,7 +302,7 @@
         .stat-card-data p {
             margin-top: 0;
             margin-bottom: 1rem;
-            color: #1F2937;
+            color: var(--text);
             font-size: 2.1rem;
             line-height: 2.4rem;
             font-weight: 700;
@@ -311,7 +311,7 @@
 
         .stat-card-range {
             position: relative;
-            background-color: #E5E7EB;
+            background-color: var(--border);
             width: 100%;
             height: 0.5rem;
             border-radius: 0.25rem;
@@ -321,7 +321,7 @@
             position: absolute;
             top: 0;
             left: 0;
-            background-color: #10B981;
+            background: linear-gradient(90deg, var(--warning), var(--success));
             width: 76%;
             height: 100%;
             border-radius: 0.25rem;
@@ -802,11 +802,6 @@
             <span>Monitor Server</span>
         </a>
 
-        <div class="nav-label" style="margin-top:18px;">Pengaturan</div>
-        <a class="nav-item" href="#" onclick="switchTab('profile'); return false;">
-            <span class="nav-icon">&#9881;</span>
-            <span>Settings</span>
-        </a>
         <a class="nav-item" href="/logout" style="color: var(--danger);">
             <span class="nav-icon">&#128682;</span>
             <span>Sign Out</span>
