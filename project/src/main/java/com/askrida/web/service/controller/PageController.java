@@ -155,17 +155,6 @@ public class PageController {
         return "server-monitor";
     }
 
-    @GetMapping("/server-monitor-register")
-    public String serverMonitorRegister(HttpSession session) {
-        if (!isLoggedIn(session)) {
-            return "redirect:/login";
-        }
-        if (!isAdmin(session)) {
-            return "redirect:/user-dashboard";
-        }
-        return "server-monitor-register";
-    }
-
     @GetMapping("/user-management")
     public String userManagement(HttpSession session) {
         if (!isLoggedIn(session)) {

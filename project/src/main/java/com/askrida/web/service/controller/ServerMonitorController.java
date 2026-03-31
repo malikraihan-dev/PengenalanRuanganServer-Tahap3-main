@@ -87,8 +87,8 @@ public class ServerMonitorController {
                 // Log akses ditolak
                 accessLogRepository.logDenied(httpReq.getRemoteAddr(), "NIM tidak ditemukan: " + nim);
                 response.put("success", false);
-                response.put("message", "User tidak ditemukan. Silakan registrasi terlebih dahulu.");
-                response.put("redirect", "/server-monitor-register");
+                response.put("message", "User tidak ditemukan. Hubungi administrator.");
+                response.put("redirect", "/");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
             }
 
@@ -360,8 +360,8 @@ public class ServerMonitorController {
                 accessLogRepository.logDenied(httpReq.getRemoteAddr(), "Wajah tidak dikenali");
                 response.put("success", false);
                 response.put("recognized", false);
-                response.put("message", "Wajah tidak dikenali. Silakan registrasi.");
-                response.put("redirect", "/server-monitor-register");
+                response.put("message", "Wajah tidak dikenali. Hubungi administrator.");
+                response.put("redirect", "/");
                 return ResponseEntity.ok(response);
             }
 
@@ -370,8 +370,8 @@ public class ServerMonitorController {
                 accessLogRepository.logDenied(httpReq.getRemoteAddr(), "NIM tidak ditemukan: " + nim);
                 response.put("success", false);
                 response.put("recognized", false);
-                response.put("message", "User tidak ditemukan. Silakan registrasi.");
-                response.put("redirect", "/server-monitor-register");
+                response.put("message", "User tidak ditemukan. Hubungi administrator.");
+                response.put("redirect", "/");
                 return ResponseEntity.ok(response);
             }
 

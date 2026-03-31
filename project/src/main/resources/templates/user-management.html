@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Panel - RuangServer</title>
-    <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
@@ -75,34 +74,7 @@
         .status-dot.active { background: var(--success); box-shadow: 0 0 8px var(--success); }
         .status-dot.inactive { background: var(--danger); }
 
-        /* ===== ATTENDANCE FACE SCAN ===== */
-        .attendance-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-        .camera-box { position: relative; background: #000; border-radius: 12px; overflow: hidden; aspect-ratio: 4/3; }
-        .camera-box video { width: 100%; height: 100%; object-fit: cover; }
-        .camera-box canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-        .camera-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; }
-        .scan-frame { width: 200px; height: 200px; border: 2px dashed rgba(59,130,246,0.5); border-radius: 50%; animation: pulse 2s infinite; }
-        @keyframes pulse { 0%,100%{ border-color: rgba(59,130,246,0.3); } 50%{ border-color: rgba(59,130,246,0.8); } }
-
-        .clock-panel { display: flex; flex-direction: column; gap: 16px; }
-        .clock-display { background: var(--bg); border-radius: 12px; padding: 24px; text-align: center; border: 1px solid var(--border); }
-        .clock-time { font-size: 48px; font-weight: 700; font-family: 'Courier New', monospace; color: var(--primary); }
-        .clock-date { font-size: 14px; color: var(--text-muted); margin-top: 4px; }
-
-        .clock-status { background: var(--bg); border-radius: 12px; padding: 20px; border: 1px solid var(--border); }
-        .clock-status-label { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
-        .clock-status-value { font-size: 16px; font-weight: 600; }
-        .clock-status-value.clocked-in { color: var(--success); }
-        .clock-status-value.not-clocked { color: var(--text-muted); }
-
-        .btn-clock { padding: 16px 32px; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; transition: all 0.3s; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .btn-clock-in { background: linear-gradient(135deg, var(--success), #059669); color: #fff; }
-        .btn-clock-in:hover { box-shadow: 0 6px 20px rgba(16,185,129,0.4); transform: translateY(-2px); }
-        .btn-clock-out { background: linear-gradient(135deg, var(--danger), #dc2626); color: #fff; }
-        .btn-clock-out:hover { box-shadow: 0 6px 20px rgba(239,68,68,0.4); transform: translateY(-2px); }
-        .btn-clock:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
-
-        /* ===== TABLE ===== */
+        /* ===== TABLES & LISTS ===== */
         .table-container { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; }
         th { padding: 12px 16px; text-align: left; font-size: 12px; text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid var(--border); font-weight: 600; letter-spacing: 0.5px; }
@@ -206,10 +178,6 @@
             <span class="nav-icon">&#128421;</span>
             <span>Monitor Server</span>
         </a>
-        <a class="nav-item" href="/server-monitor-register">
-            <span class="nav-icon">&#128248;</span>
-            <span>Registrasi Server</span>
-        </a>
 
         <div class="nav-label" style="margin-top:18px;">User</div>
         <a class="nav-item active" href="/user-management">
@@ -263,33 +231,11 @@
     <div id="userSelectSection">
         <div class="card">
             <div class="card-header">
-                <div class="card-title">&#128274; Pilih User / Login Face</div>
+                <div class="card-title">&#128100; Pilih User</div>
             </div>
-            <p style="color:var(--text-muted); margin-bottom:16px;">Scan wajah Anda atau pilih user dari daftar untuk mengakses panel.</p>
+            <p style="color:var(--text-muted); margin-bottom:16px;">Pilih user dari daftar di bawah untuk mengelola atau melihat detail profile.</p>
 
-            <div class="attendance-grid">
-                <!-- Camera for face login -->
-                <div>
-                    <div class="camera-box" id="loginCameraBox">
-                        <video id="loginVideo" autoplay muted playsinline></video>
-                        <canvas id="loginCanvas"></canvas>
-                        <div class="camera-overlay">
-                            <div class="scan-frame"></div>
-                        </div>
-                    </div>
-                    <div style="text-align:center; margin-top:12px;">
-                        <button class="btn btn-primary" onclick="startLoginCamera()" id="btnStartLoginCam">&#128247; Aktifkan Kamera</button>
-                        <button class="btn btn-success" onclick="loginWithFace()" id="btnLoginFace" style="display:none;">&#128274; Login dengan Wajah</button>
-                        <p id="loginStatus" style="color:var(--text-muted); font-size:13px; margin-top:8px;"></p>
-                    </div>
-                </div>
-
-                <!-- User list for manual selection -->
-                <div>
-                    <div class="card-title" style="margin-bottom:12px;">&#128203; Atau Pilih dari Daftar</div>
-                    <div id="userListForSelect" class="loading-text">Memuat daftar user...</div>
-                </div>
-            </div>
+            <div id="userListForSelect" class="loading-text">Memuat daftar user...</div>
         </div>
     </div>
 
@@ -299,8 +245,7 @@
         <!-- TABS -->
         <div class="tabs">
             <div class="tab active" onclick="switchTab('profile')">&#128100; Profil</div>
-            <div class="tab" onclick="switchTab('attendance')">&#128336; Absensi</div>
-            <div class="tab" onclick="switchTab('history')">&#128203; Riwayat</div>
+            <div class="tab" onclick="switchTab('history')">&#128203; Riwayat Akses</div>
             <div class="tab" id="tabAdmin" style="display:none;" onclick="switchTab('admin')">&#128272; Admin</div>
         </div>
 
