@@ -314,12 +314,138 @@
             </div>
         </div>
 
+        <!-- TAB: ABSENSI (Clock In/Out) -->
+        <div id="tab-attendance" class="tab-content">
+            <!-- Stats -->
+            <div class="stat-grid" id="attendanceStats">
+                <div class="stat-card">
+                    <div class="stat-icon green">&#128336;</div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="statTodayTotal">0</div>
+                        <div class="stat-label">Total Hadir Hari Ini</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon blue">&#9989;</div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="statActiveNow">0</div>
+                        <div class="stat-label">Sedang Aktif</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon orange">&#128682;</div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="statCompleted">0</div>
+                        <div class="stat-label">Sudah Pulang</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">&#128247; Absensi Wajah — Clock In / Clock Out</div>
+                </div>
+
+                <div class="attendance-grid">
+                    <!-- Camera -->
+                    <div>
+                        <div class="camera-box" id="attendCameraBox">
+                            <video id="attendVideo" autoplay muted playsinline></video>
+                            <canvas id="attendCanvas"></canvas>
+                            <div class="camera-overlay">
+                                <div class="scan-frame"></div>
+                            </div>
+                        </div>
+                        <div style="text-align:center; margin-top:12px;">
+                            <button class="btn btn-primary" onclick="startAttendCamera()" id="btnStartAttendCam">&#128247; Aktifkan Kamera</button>
+                            <p id="attendStatus" style="color:var(--text-muted); font-size:13px; margin-top:8px;"></p>
+                        </div>
+                    </div>
+
+                    <!-- Clock & Buttons -->
+                    <div class="clock-panel">
+                        <div class="clock-display">
+                            <div class="clock-time" id="clockTime">--:--:--</div>
+                            <div class="clock-date" id="clockDate">-</div>
+                        </div>
+
+                        <div class="clock-status">
+                            <div class="clock-status-label">Status Hari Ini</div>
+                            <div class="clock-status-value" id="clockStatusText">Memuat...</div>
+                            <div style="margin-top:8px; font-size:13px; color:var(--text-muted);">
+                                <span>Clock In: </span><strong id="clockInDisplay">-</strong>
+                            </div>
+                            <div style="font-size:13px; color:var(--text-muted);">
+                                <span>Clock Out: </span><strong id="clockOutDisplay">-</strong>
+                            </div>
+                        </div>
+
+                        <button class="btn-clock btn-clock-in" id="btnClockIn" onclick="doClockIn()">
+                            &#9654; Clock In
+                        </button>
+                        <button class="btn-clock btn-clock-out" id="btnClockOut" onclick="doClockOut()" style="display:none;">
+                            &#9632; Clock Out
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Today Attendance Table -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">&#128203; Kehadiran Hari Ini</div>
+                    <button class="btn btn-primary btn-sm" onclick="loadTodayAttendance()">&#8635; Refresh</button>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>NIM</th>
+                                <th>Role</th>
+                                <th>Clock In</th>
+                                <th>Clock Out</th>
+                                <th>Durasi</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="todayAttendanceBody">
+                            <tr><td colspan="7" class="loading-text">Memuat data...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
         <!-- TAB: RIWAYAT -->
         <div id="tab-history" class="tab-content">
             <div class="card">
                 <div class="card-header">
-                    <div class="card-title">&#128274; Riwayat Akses</div>
-                    <button class="btn btn-primary btn-sm" onclick="loadAccessLogs()">&#8635; Refresh</button>
+                    <div class="card-title">&#128203; Riwayat Kehadiran</div>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Tanggal</th>
+                                <th>Clock In</th>
+                                <th>Clock Out</th>
+                                <th>Durasi</th>
+                                <th>Metode</th>
+                                <th>Confidence</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyBody">
+                            <tr><td colspan="7" class="loading-text">Memuat riwayat...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">&#128274; Riwayat Akses Server</div>
                 </div>
                 <div class="table-container">
                     <table>
@@ -349,6 +475,9 @@
                     <div class="card-title">&#128100; Manajemen User (Admin Only)</div>
                     <button class="btn btn-primary btn-sm" onclick="loadAllUsers()">&#8635; Refresh</button>
                 </div>
+                <p style="color:var(--text-muted); font-size:13px; margin-bottom:16px;">
+                    &#9888; Hapus user tidak tersedia. Hanya bisa mengubah role dan status aktif user.
+                </p>
                 <div class="table-container">
                     <table>
                         <thead>
@@ -357,12 +486,13 @@
                                 <th>NIM</th>
                                 <th>Role</th>
                                 <th>Status</th>
+                                <th>Foto Wajah</th>
                                 <th>Terdaftar</th>
                                 <th>Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="adminUserBody">
-                            <tr><td colspan="6" class="loading-text">Memuat data user...</td></tr>
+                            <tr><td colspan="7" class="loading-text">Memuat data user...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -376,11 +506,31 @@
     // ===== STATE =====
     let currentUser = null;
     let currentToken = null;
+    let faceApiLoaded = false;
+    let loginStream = null;
+    let attendStream = null;
+    let loginFaceMatcher = null;
+    let attendFaceMatcher = null;
+    let allFaceDescriptors = [];
 
     // ===== INIT =====
     document.addEventListener('DOMContentLoaded', () => {
+        updateClock();
+        setInterval(updateClock, 1000);
         loadUserList();
+        loadFaceApi();
     });
+
+    // ===== CLOCK =====
+    function updateClock() {
+        const now = new Date();
+        const time = now.toLocaleTimeString('id-ID', { hour12: false });
+        const date = now.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        const el = document.getElementById('clockTime');
+        if (el) el.textContent = time;
+        const el2 = document.getElementById('clockDate');
+        if (el2) el2.textContent = date;
+    }
 
     // ===== TOAST =====
     function showToast(msg, type = 'info') {
@@ -396,6 +546,54 @@
         a.style.display = 'flex';
         a.innerHTML = msg;
         setTimeout(() => a.style.display = 'none', 5000);
+    }
+
+    // ===== FACE API LOADING =====
+    async function loadFaceApi() {
+        try {
+            const MODEL_URL = 'https://cdn.jsdelivr.net/gh/nicehash/nicehash-face-api@master/weights';
+            await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+            await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+            await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+            await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
+            faceApiLoaded = true;
+            console.log('Face API loaded');
+            // Load all face descriptors from server
+            await loadAllFaceDescriptors();
+        } catch (e) {
+            console.error('Failed to load face-api:', e);
+        }
+    }
+
+    async function loadAllFaceDescriptors() {
+        try {
+            const res = await fetch('/api/face/all');
+            const data = await res.json();
+            if (data && data.length > 0) {
+                allFaceDescriptors = [];
+                const labelMap = {};
+                data.forEach(f => {
+                    const key = f.nim || f.label;
+                    if (!labelMap[key]) labelMap[key] = { label: f.label, nim: f.nim, descriptors: [] };
+                    try {
+                        const desc = JSON.parse(f.faceDescriptor || f.face_descriptor);
+                        labelMap[key].descriptors.push(new Float32Array(desc));
+                    } catch(e) {}
+                });
+                Object.values(labelMap).forEach(item => {
+                    if (item.descriptors.length > 0) {
+                        allFaceDescriptors.push(new faceapi.LabeledFaceDescriptors(item.nim || item.label, item.descriptors));
+                    }
+                });
+                if (allFaceDescriptors.length > 0) {
+                    loginFaceMatcher = new faceapi.FaceMatcher(allFaceDescriptors, 0.5);
+                    attendFaceMatcher = new faceapi.FaceMatcher(allFaceDescriptors, 0.5);
+                }
+                console.log('Loaded', allFaceDescriptors.length, 'face descriptors');
+            }
+        } catch (e) {
+            console.log('No face data available or error:', e.message);
+        }
     }
 
     // ===== USER LIST =====
@@ -471,6 +669,8 @@
     function logoutUser() {
         currentUser = null;
         currentToken = null;
+        stopCamera(loginStream);
+        stopCamera(attendStream);
         document.getElementById('userSelectSection').style.display = '';
         document.getElementById('mainPanel').style.display = 'none';
         document.getElementById('tabAdmin').style.display = 'none';
@@ -874,7 +1074,7 @@
     function renderAdminUsers(users) {
         const tbody = document.getElementById('adminUserBody');
         if (!users || users.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="loading-text">Tidak ada user</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" class="loading-text">Tidak ada user</td></tr>';
             return;
         }
         tbody.innerHTML = users.map(u => {
@@ -888,9 +1088,8 @@
             if (!isCurrentUser) {
                 const toggleRole = u.role === 'ADMIN' ? 'USER' : 'ADMIN';
                 const toggleActive = u.isActive ? 'false' : 'true';
-                actions += `<button class="btn btn-primary btn-sm" onclick="changeRole('${u.nim}','${toggleRole}')" title="Ubah ke ${toggleRole}">&#8646; ${toggleRole}</button>`;
-                actions += `&nbsp;<button class="btn ${u.isActive ? 'btn-danger' : 'btn-success'} btn-sm" onclick="toggleStatus('${u.nim}',${toggleActive})">${u.isActive ? '&#10006; Nonaktif' : '&#10004; Aktif'}</button>`;
-                actions += `&nbsp;<button class="btn btn-danger btn-sm" onclick="deleteUser('${u.nim}','${u.nama}')">&#128682; Hapus</button>`;
+                actions += `<button class="btn btn-primary btn-sm" onclick="changeRole('${u.nim}','${toggleRole}')" title="Ubah ke ${toggleRole}">&#8646; ${toggleRole}</button> `;
+                actions += `<button class="btn ${u.isActive ? 'btn-danger' : 'btn-success'} btn-sm" onclick="toggleStatus('${u.nim}',${toggleActive})">${u.isActive ? '&#10006; Nonaktifkan' : '&#10004; Aktifkan'}</button>`;
             } else {
                 actions = '<span style="color:var(--text-muted); font-size:12px;">Anda</span>';
             }
@@ -900,6 +1099,7 @@
                 <td>${u.nim}</td>
                 <td>${roleBadge}</td>
                 <td>${statusBadge}</td>
+                <td>${u.faceCount || 0} foto</td>
                 <td>${created}</td>
                 <td>${actions}</td>
             </tr>`;
@@ -952,31 +1152,6 @@
                 loadAllUsers();
             } else {
                 showToast(data.message || 'Gagal mengubah status', 'error');
-            }
-        } catch (e) {
-            showToast('Error: ' + e.message, 'error');
-        }
-    }
-
-    async function deleteUser(nim, nama) {
-        if (!currentUser || currentUser.role !== 'ADMIN') {
-            showToast('Hanya admin yang bisa menghapus user', 'error');
-            return;
-        }
-        if (!confirm('Apakah Anda yakin ingin menghapus user ' + nama + ' (' + nim + ')? Tindakan ini tidak dapat dibatalkan.')) {
-            return;
-        }
-        try {
-            const res = await fetch('/api/monitor/users/' + nim, {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' }
-            });
-            const data = await res.json();
-            if (data.success) {
-                showToast(data.message || 'User berhasil dihapus', 'success');
-                loadAllUsers();
-            } else {
-                showToast(data.message || 'Gagal menghapus user', 'error');
             }
         } catch (e) {
             showToast('Error: ' + e.message, 'error');

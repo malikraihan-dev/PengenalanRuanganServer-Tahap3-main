@@ -34,3 +34,6 @@ build/
 
 ### Duplicate bin folder ###
 bin/
+
+# Properties files
+*.properties
