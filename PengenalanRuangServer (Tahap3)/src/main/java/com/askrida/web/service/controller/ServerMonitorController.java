@@ -6,7 +6,6 @@ import com.askrida.web.service.repository.AccessLogRepository;
 import com.askrida.web.service.repository.ServerUserRepository;
 import com.askrida.web.service.repository.FaceRepository;
 import com.askrida.web.service.repository.AttendanceRepository;
-import com.askrida.web.service.repository.FingerprintMapRepository;
 import com.askrida.web.service.util.JwtUtil;
 import com.askrida.web.service.mqtt.MqttPublisherService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,13 +63,8 @@ public class ServerMonitorController {
     @Autowired
     private AttendanceRepository attendanceRepository;
 
-<<<<<<< HEAD
     @Autowired(required = false)
     private MqttPublisherService mqttPublisher;
-=======
-    @Autowired
-    private FingerprintMapRepository fingerprintMapRepository;
->>>>>>> 62819bac5e1e82b1d683436c22ca8f577725460e
 
     // ======================== AUTH ========================
 
@@ -459,152 +453,6 @@ public class ServerMonitorController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             response.put("success", false);
-            response.put("message", "Error: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-        }
-    }
-
-    // ======================== FINGERPRINT ========================
-
-    /**
-     * Enroll fingerprint: simpan mapping fingerprintId -> NIM.
-     */
-    @PostMapping("/fingerprint/enroll")
-    public ResponseEntity<Map<String, Object>> enrollFingerprint(@RequestBody Map<String, Object> request) {
-        Map<String, Object> response = new HashMap<>();
-        try {
-            String nim = (String) request.get("nim");
-            Integer fingerprintId = request.get("fingerprintId") != null ?
-                Integer.parseInt(request.get("fingerprintId").toString()) : null;
-
-            if (nim == null || nim.isEmpty() || fingerprintId == null) {
-                response.put("success", false);
-                response.put("message", "NIM dan fingerprintId diperlukan");
-                return ResponseEntity.badRequest().body(response);
-            }
-
-            ServerUser user = userRepository.findByNim(nim);
-            if (user == null) {
-                response.put("success", false);
-                response.put("message", "User tidak ditemukan");
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
-            }
-
-            fingerprintMapRepository.upsertMapping(nim, fingerprintId);
-
-            response.put("success", true);
-            response.put("message", "Fingerprint terdaftar untuk NIM " + nim);
-            response.put("nim", nim);
-            response.put("fingerprintId", fingerprintId);
-            return ResponseEntity.ok(response);
-
-        } catch (Exception e) {
-            response.put("success", false);
-            response.put("message", "Error: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-        }
-    }
-
-    /**
-     * Verifikasi fingerprint dan catat absensi.
-     */
-    @PostMapping("/fingerprint/verify")
-    public ResponseEntity<Map<String, Object>> verifyFingerprint(
-            @RequestBody Map<String, Object> request,
-            HttpServletRequest httpReq) {
-        Map<String, Object> response = new HashMap<>();
-        try {
-            Integer fingerprintId = request.get("fingerprintId") != null ?
-                Integer.parseInt(request.get("fingerprintId").toString()) : null;
-            Double confidence = request.get("confidence") != null ?
-                Double.parseDouble(request.get("confidence").toString()) : 0.0;
-            String notes = request.get("notes") != null ? request.get("notes").toString() : "Fingerprint";
-
-            if (fingerprintId == null) {
-                response.put("success", false);
-                response.put("accessGranted", false);
-                response.put("message", "fingerprintId diperlukan");
-                return ResponseEntity.badRequest().body(response);
-            }
-
-            String nim = fingerprintMapRepository.findNimByFingerprintId(fingerprintId);
-            if (nim == null || nim.isEmpty()) {
-                AccessLog log = new AccessLog(null, "Unknown", null, "DENIED", confidence);
-                log.setMethod("fingerprint");
-                log.setIpAddress(httpReq.getRemoteAddr());
-                log.setNotes("Fingerprint ID tidak terdaftar: " + fingerprintId);
-                accessLogRepository.logAccess(log);
-
-                response.put("success", false);
-                response.put("accessGranted", false);
-                response.put("message", "Fingerprint tidak terdaftar");
-                return ResponseEntity.ok(response);
-            }
-
-            ServerUser user = userRepository.findByNim(nim);
-            if (user == null) {
-                AccessLog log = new AccessLog(nim, "Unknown", null, "DENIED", confidence);
-                log.setMethod("fingerprint");
-                log.setIpAddress(httpReq.getRemoteAddr());
-                log.setNotes("User tidak ditemukan untuk NIM: " + nim);
-                accessLogRepository.logAccess(log);
-
-                response.put("success", false);
-                response.put("accessGranted", false);
-                response.put("message", "User tidak ditemukan");
-                return ResponseEntity.ok(response);
-            }
-
-            if (!user.isActive()) {
-                AccessLog log = new AccessLog(nim, user.getNama(), user.getRole(), "DENIED", confidence);
-                log.setMethod("fingerprint");
-                log.setIpAddress(httpReq.getRemoteAddr());
-                log.setNotes("User nonaktif: " + nim);
-                accessLogRepository.logAccess(log);
-
-                response.put("success", false);
-                response.put("accessGranted", false);
-                response.put("message", "Akun dinonaktifkan");
-                return ResponseEntity.ok(response);
-            }
-
-            boolean confidenceOk = confidence >= 0.5 || confidence > 1.0;
-            if (!confidenceOk) {
-                AccessLog log = new AccessLog(nim, user.getNama(), user.getRole(), "DENIED", confidence);
-                log.setMethod("fingerprint");
-                log.setIpAddress(httpReq.getRemoteAddr());
-                log.setNotes("Confidence rendah: " + String.format("%.2f", confidence));
-                accessLogRepository.logAccess(log);
-
-                response.put("success", false);
-                response.put("accessGranted", false);
-                response.put("message", "Confidence terlalu rendah");
-                return ResponseEntity.ok(response);
-            }
-
-            Map<String, Object> result = attendanceRepository.clockIn(
-                nim, user.getNama(), confidence, "fingerprint", httpReq.getRemoteAddr(), notes);
-
-            AccessLog log = new AccessLog(nim, user.getNama(), user.getRole(), "GRANTED", confidence);
-            log.setMethod("fingerprint");
-            log.setIpAddress(httpReq.getRemoteAddr());
-            log.setNotes("Akses diberikan - Fingerprint");
-            accessLogRepository.logAccess(log);
-
-            response.put("success", true);
-            response.put("accessGranted", true);
-            response.put("nim", nim);
-            response.put("nama", user.getNama());
-            response.put("alreadyClockedIn", result.get("alreadyClockedIn"));
-            response.put("attendanceId", result.get("attendanceId"));
-            response.put("clockIn", result.get("clockIn"));
-            response.put("message", (Boolean) result.get("alreadyClockedIn")
-                ? "Anda sudah clock-in hari ini" : "Clock-in berhasil");
-            return ResponseEntity.ok(response);
-
-        } catch (Exception e) {
-            response.put("success", false);
-            response.put("accessGranted", false);
             response.put("message", "Error: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }

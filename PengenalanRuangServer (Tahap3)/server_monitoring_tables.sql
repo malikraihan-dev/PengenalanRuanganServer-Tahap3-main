@@ -54,18 +54,7 @@ CREATE TABLE IF NOT EXISTS server_face_data (
 CREATE INDEX IF NOT EXISTS idx_server_face_nim ON server_face_data(nim);
 CREATE INDEX IF NOT EXISTS idx_server_face_user ON server_face_data(user_id);
 
--- 4. TABEL FINGERPRINT MAP (Fingerprint ID -> NIM)
-CREATE TABLE IF NOT EXISTS server_fingerprint_map (
-    id SERIAL PRIMARY KEY,
-    nim VARCHAR(100) NOT NULL REFERENCES server_users(nim) ON DELETE CASCADE,
-    fingerprint_id INT NOT NULL UNIQUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX IF NOT EXISTS idx_fingerprint_map_nim ON server_fingerprint_map(nim);
-CREATE INDEX IF NOT EXISTS idx_fingerprint_map_fpid ON server_fingerprint_map(fingerprint_id);
-
--- 5. TABEL NOTIFICATIONS (Notifikasi Sistem)
+-- 4. TABEL NOTIFICATIONS (Notifikasi Sistem)
 CREATE TABLE IF NOT EXISTS monitor_notifications (
     id SERIAL PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
