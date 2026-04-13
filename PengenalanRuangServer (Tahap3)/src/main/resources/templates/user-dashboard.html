@@ -610,6 +610,47 @@
 
         .btn-clock:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
 
+        .fingerprint-panel {
+            margin-top: 16px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px 16px;
+        }
+        .fingerprint-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .fingerprint-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-light);
+        }
+        .fingerprint-dot.enabled {
+            background: var(--success);
+            box-shadow: 0 0 8px rgba(46, 196, 182, 0.5);
+        }
+        .fingerprint-dot.disabled {
+            background: var(--warning);
+        }
+        .fingerprint-meta {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 6px;
+        }
+        .fingerprint-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
+        .fingerprint-row strong { color: var(--text); }
+
         /* ===== PROFILE ===== */
         .profile-container { display: grid; grid-template-columns: 240px 1fr; gap: 28px; }
 
@@ -1099,6 +1140,21 @@
                                 &#9632; Clock Out
                             </button>
                         </div>
+                        <div class="fingerprint-panel">
+                            <div class="fingerprint-status">
+                                <span class="fingerprint-dot" id="fingerprintDot"></span>
+                                <span id="fingerprintStatusText">Status fingerprint belum dimuat.</span>
+                            </div>
+                            <div class="fingerprint-meta" id="fingerprintStatusMeta">Silakan tunggu...</div>
+                            <div class="fingerprint-row">
+                                <span>ID Fingerprint</span>
+                                <strong id="fingerprintIdDisplay">-</strong>
+                            </div>
+                            <div class="fingerprint-row">
+                                <span>Terdaftar</span>
+                                <strong id="fingerprintEnrollDisplay">-</strong>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1184,6 +1240,10 @@
                                 <div class="detail-item">
                                     <div class="detail-label">Jumlah Foto Wajah</div>
                                     <div class="detail-value" id="profileFaceCount">0</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Status Fingerprint</div>
+                                    <div class="detail-value" id="profileFingerprintStatus">Belum Terdaftar</div>
                                 </div>
                                 <div class="detail-item">
                                     <div class="detail-label">Terdaftar Sejak</div>
@@ -1451,6 +1511,7 @@
                 renderStats(data);
                 renderCharts(data);
                 loadAttendanceStatus();
+                loadFingerprintStatus();
                 loadRecentHistory(data);
                 loadFullHistory(data);
             }
@@ -1657,6 +1718,7 @@
 
         if (tab === 'attendance') {
             loadAttendanceStatus();
+            loadFingerprintStatus();
             startAttendCamera();
         }
     }
@@ -1669,6 +1731,43 @@
             const data = await res.json();
             updateClockButtons(data.isClockedIn, data.activeClockIn);
         } catch (e) { console.error('Error:', e); }
+    }
+
+    async function loadFingerprintStatus() {
+        if (!userNim) return;
+        const statusText = document.getElementById('fingerprintStatusText');
+        const statusMeta = document.getElementById('fingerprintStatusMeta');
+        const statusDot = document.getElementById('fingerprintDot');
+        const fingerprintIdDisplay = document.getElementById('fingerprintIdDisplay');
+        const fingerprintEnrollDisplay = document.getElementById('fingerprintEnrollDisplay');
+        const profileFingerprintStatus = document.getElementById('profileFingerprintStatus');
+        try {
+            const res = await fetch('/api/monitor/fingerprint/status/' + userNim);
+            const data = await res.json();
+            if (data.status !== 'success') {
+                if (statusText) statusText.textContent = 'Status fingerprint tidak tersedia.';
+                if (statusMeta) statusMeta.textContent = data.message || 'Coba refresh halaman.';
+                if (statusDot) statusDot.className = 'fingerprint-dot disabled';
+                if (profileFingerprintStatus) profileFingerprintStatus.textContent = 'Tidak tersedia';
+                return;
+            }
+
+            const enabled = !!data.fingerprintEnabled;
+            const fpId = data.fingerprintId != null ? data.fingerprintId : '-';
+            const enrolledAt = data.enrolledAt ? new Date(data.enrolledAt).toLocaleString('id-ID') : '-';
+
+            if (statusDot) statusDot.className = enabled ? 'fingerprint-dot enabled' : 'fingerprint-dot disabled';
+            if (statusText) statusText.textContent = enabled ? 'Fingerprint aktif untuk absensi.' : 'Fingerprint belum aktif.';
+            if (statusMeta) statusMeta.textContent = enabled ? 'Gunakan sensor untuk clock-in/clock-out.' : 'Hubungi admin untuk pendaftaran.';
+            if (fingerprintIdDisplay) fingerprintIdDisplay.textContent = fpId;
+            if (fingerprintEnrollDisplay) fingerprintEnrollDisplay.textContent = enrolledAt;
+            if (profileFingerprintStatus) profileFingerprintStatus.textContent = enabled ? 'Aktif (ID ' + fpId + ')' : 'Belum Terdaftar';
+        } catch (e) {
+            if (statusText) statusText.textContent = 'Gagal memuat status fingerprint.';
+            if (statusMeta) statusMeta.textContent = e.message || 'Coba refresh halaman.';
+            if (statusDot) statusDot.className = 'fingerprint-dot disabled';
+            if (profileFingerprintStatus) profileFingerprintStatus.textContent = 'Tidak tersedia';
+        }
     }
 
     function updateClockButtons(isClockedIn, activeClockIn) {
