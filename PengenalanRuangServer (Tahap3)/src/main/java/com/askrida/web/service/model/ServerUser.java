@@ -1,4 +1,4 @@
-package com.askrida.web.service.model;
+    package com.askrida.web.service.model;
 
 import java.sql.Timestamp;
 
