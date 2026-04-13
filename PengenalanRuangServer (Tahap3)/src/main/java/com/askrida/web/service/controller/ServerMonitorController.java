@@ -922,6 +922,12 @@ public class ServerMonitorController {
     public ResponseEntity<?> verifyFingerprint(@RequestBody Map<String, Object> request, HttpServletRequest httpReq) {
         Map<String, Object> response = new HashMap<>();
         try {
+            if (!userRepository.isFingerprintFeatureAvailable()) {
+                response.put("status", "db-not-ready");
+                response.put("accessGranted", false);
+                response.put("message", "Fitur fingerprint belum aktif di database. Jalankan script server_monitoring_tables.sql untuk menambahkan kolom fingerprint_*");
+                return ResponseEntity.ok(response);
+            }
             Integer fpId = Integer.parseInt(request.get("fingerprintId").toString());
             Double confidence = request.get("confidence") != null ?
                 Double.parseDouble(request.get("confidence").toString()) : 0.0;
@@ -933,10 +939,10 @@ public class ServerMonitorController {
                     mqttPublisher.publishFingerprintResult(fpId, false, "Unknown");
                     mqttPublisher.publishAccessLog("UNKNOWN", "FINGERPRINT", false);
                 }
-                response.put("status", "unauthorized");
+                response.put("status", "not-found");
                 response.put("message", "Fingerprint tidak dikenali");
                 response.put("accessGranted", false);
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+                return ResponseEntity.ok(response);
             }
             if (!user.isActive() || !user.isFingerprintEnabled()) {
                 response.put("status", "forbidden");
@@ -947,7 +953,7 @@ public class ServerMonitorController {
                     mqttPublisher.publishFingerprintResult(fpId, false, user.getNama());
                     mqttPublisher.publishAccessLog(user.getNim(), "FINGERPRINT", false);
                 }
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+                return ResponseEntity.ok(response);
             }
             accessLogRepository.logGranted(user.getNim(), user.getNama(), user.getRole(), confidence, httpReq.getRemoteAddr());
             String token = JwtUtil.generateToken(user.getNim(), user.getNama(), user.getRole());

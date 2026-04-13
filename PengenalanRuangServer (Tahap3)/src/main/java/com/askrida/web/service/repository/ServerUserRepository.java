@@ -36,6 +36,10 @@ public class ServerUserRepository {
         }
     }
 
+    public boolean isFingerprintFeatureAvailable() {
+        return hasFingerprintColumns();
+    }
+
     private String fingerprintSelectList(String tableAlias) {
         if (hasFingerprintColumns()) {
             return tableAlias + ".fingerprint_id, " +
