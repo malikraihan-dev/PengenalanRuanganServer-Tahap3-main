@@ -8,6 +8,8 @@
     <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- STOMP client for realtime updates (WebSocket) -->
+    <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7.0.0/bundles/stomp.umd.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
@@ -989,18 +991,6 @@
             <span class="nav-icon">&#128200;</span>
             <span class="nav-label">Monitor Server</span>
         </a>
-        <a href="/server-monitor-register" class="nav-item">
-            <span class="nav-icon">&#128100;</span>
-            <span class="nav-label">Register Wajah</span>
-        </a>
-        <a href="/face-register" class="nav-item">
-            <span class="nav-icon">&#128248;</span>
-            <span class="nav-label">Face Register</span>
-        </a>
-        <a href="/face-absensi" class="nav-item">
-            <span class="nav-icon">&#128247;</span>
-            <span class="nav-label">Absensi Wajah</span>
-        </a>
         <a href="/chatbot" class="nav-item">
             <span class="nav-icon">&#129302;</span>
             <span class="nav-label">Chatbot</span>
@@ -1948,6 +1938,46 @@
 
     // Refresh chart setiap 60 detik
     setInterval(loadChart, 60000);
+
+    // ===================== REALTIME (WebSocket STOMP) =====================
+    function initRealtime() {
+        if (!window.StompJs || !window.StompJs.Client) {
+            console.warn('STOMP client not loaded; realtime disabled');
+            return;
+        }
+
+        const wsScheme = (location.protocol === 'https:') ? 'wss' : 'ws';
+        const client = new StompJs.Client({
+            brokerURL: `${wsScheme}://${location.host}/ws`,
+            reconnectDelay: 3000,
+            heartbeatIncoming: 0,
+            heartbeatOutgoing: 0,
+            debug: () => {}
+        });
+
+        client.onConnect = () => {
+            client.subscribe('/topic/monitor', (msg) => {
+                try {
+                    const evt = JSON.parse(msg.body || '{}');
+                    // Keep it simple: when any monitor event arrives, refresh existing UI.
+                    if (typeof loadStats === 'function') loadStats();
+                    if (typeof refreshLogs === 'function') refreshLogs();
+                    console.log('[Realtime]', evt);
+                } catch (e) {
+                    console.warn('Failed to parse realtime message', e);
+                }
+            });
+            console.log('[Realtime] Connected');
+        };
+
+        client.onStompError = (frame) => {
+            console.warn('[Realtime] STOMP error', frame);
+        };
+
+        client.activate();
+    }
+
+    initRealtime();
 </script>
 </body>
 </html>

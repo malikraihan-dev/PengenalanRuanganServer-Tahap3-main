@@ -1,4 +1,4 @@
-package com.askrida.web.service.model;
+    package com.askrida.web.service.model;
 
 import java.sql.Timestamp;
 
@@ -17,8 +17,15 @@ public class ServerUser {
     private Timestamp createdAt;
     private Timestamp updatedAt;
 
+    // Fingerprint fields
+    private Integer fingerprintId;      // ID fingerprint di sensor Arduino
+    private String fingerprintData;     // Template fingerprint (binary/hex encoded)
+    private boolean fingerprintEnabled; // Status fingerprint
+    private Timestamp fingerprintEnrolledAt;
+
     // Transient fields
     private int faceCount;
+    private int fingerprintCount;
 
     public ServerUser() {}
 
@@ -61,6 +68,21 @@ public class ServerUser {
 
     public int getFaceCount() { return faceCount; }
     public void setFaceCount(int faceCount) { this.faceCount = faceCount; }
+
+    public Integer getFingerprintId() { return fingerprintId; }
+    public void setFingerprintId(Integer fingerprintId) { this.fingerprintId = fingerprintId; }
+
+    public String getFingerprintData() { return fingerprintData; }
+    public void setFingerprintData(String fingerprintData) { this.fingerprintData = fingerprintData; }
+
+    public boolean isFingerprintEnabled() { return fingerprintEnabled; }
+    public void setFingerprintEnabled(boolean fingerprintEnabled) { this.fingerprintEnabled = fingerprintEnabled; }
+
+    public Timestamp getFingerprintEnrolledAt() { return fingerprintEnrolledAt; }
+    public void setFingerprintEnrolledAt(Timestamp fingerprintEnrolledAt) { this.fingerprintEnrolledAt = fingerprintEnrolledAt; }
+
+    public int getFingerprintCount() { return fingerprintCount; }
+    public void setFingerprintCount(int fingerprintCount) { this.fingerprintCount = fingerprintCount; }
 
     public boolean isAdmin() {
         return "ADMIN".equalsIgnoreCase(this.role);

@@ -23,6 +23,36 @@ public class ServerUserRepository {
     @Qualifier("jdbcTemplate1")
     public JdbcTemplate jdbcTemplate1;
 
+    private boolean hasFingerprintColumns() {
+        try {
+            Integer count = jdbcTemplate1.queryForObject(
+                    "SELECT COUNT(*) FROM information_schema.columns " +
+                            "WHERE table_schema = 'public' AND table_name = 'server_users' " +
+                            "AND column_name IN ('fingerprint_id','fingerprint_data','fingerprint_enabled','fingerprint_enrolled_at')",
+                    Integer.class);
+            return count != null && count == 4;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public boolean isFingerprintFeatureAvailable() {
+        return hasFingerprintColumns();
+    }
+
+    private String fingerprintSelectList(String tableAlias) {
+        if (hasFingerprintColumns()) {
+            return tableAlias + ".fingerprint_id, " +
+                    tableAlias + ".fingerprint_data, " +
+                    tableAlias + ".fingerprint_enabled, " +
+                    tableAlias + ".fingerprint_enrolled_at";
+        }
+        return "CAST(NULL AS integer) AS fingerprint_id, " +
+                "CAST(NULL AS text) AS fingerprint_data, " +
+                "CAST(false AS boolean) AS fingerprint_enabled, " +
+                "CAST(NULL AS timestamp) AS fingerprint_enrolled_at";
+    }
+
     /**
      * Register user baru
      */
@@ -42,7 +72,9 @@ public class ServerUserRepository {
      * Cari user berdasarkan NIM
      */
     public ServerUser findByNim(String nim) {
-        String sql = "SELECT id, nim, nama, role, password_hash, face_embedding, photo_url, is_active, created_at, updated_at FROM server_users WHERE nim = ?";
+        String sql = "SELECT id, nim, nama, role, password_hash, face_embedding, photo_url, " +
+                fingerprintSelectList("server_users") + ", " +
+                "is_active, created_at, updated_at FROM server_users WHERE nim = ?";
         try {
             List<ServerUser> users = jdbcTemplate1.query(sql, new Object[]{nim}, (rs, rowNum) -> {
                 ServerUser u = new ServerUser();
@@ -53,6 +85,10 @@ public class ServerUserRepository {
                 u.setPasswordHash(rs.getString("password_hash"));
                 u.setFaceEmbedding(rs.getString("face_embedding"));
                 u.setPhotoUrl(rs.getString("photo_url"));
+                u.setFingerprintId((Integer) rs.getObject("fingerprint_id"));
+                u.setFingerprintData(rs.getString("fingerprint_data"));
+                u.setFingerprintEnabled(rs.getBoolean("fingerprint_enabled"));
+                u.setFingerprintEnrolledAt(rs.getTimestamp("fingerprint_enrolled_at"));
                 u.setActive(rs.getBoolean("is_active"));
                 u.setCreatedAt(rs.getTimestamp("created_at"));
                 u.setUpdatedAt(rs.getTimestamp("updated_at"));
@@ -95,10 +131,11 @@ public class ServerUserRepository {
      */
     public List<ServerUser> getAllUsers() {
         String sql = "SELECT u.id, u.nim, u.nama, u.role, u.is_active, u.created_at, u.updated_at, " +
-                     "COALESCE(f.face_count, 0) AS face_count " +
-                     "FROM server_users u " +
-                     "LEFT JOIN (SELECT nim, COUNT(*) AS face_count FROM server_face_data GROUP BY nim) f ON u.nim = f.nim " +
-                     "ORDER BY u.created_at DESC";
+                fingerprintSelectList("u") + ", " +
+                "COALESCE(f.face_count, 0) AS face_count " +
+                "FROM server_users u " +
+                "LEFT JOIN (SELECT nim, COUNT(*) AS face_count FROM server_face_data GROUP BY nim) f ON u.nim = f.nim " +
+                "ORDER BY u.created_at DESC";
         return jdbcTemplate1.query(sql, (rs, rowNum) -> {
             ServerUser u = new ServerUser();
             u.setId(rs.getInt("id"));
@@ -108,9 +145,48 @@ public class ServerUserRepository {
             u.setActive(rs.getBoolean("is_active"));
             u.setCreatedAt(rs.getTimestamp("created_at"));
             u.setUpdatedAt(rs.getTimestamp("updated_at"));
+            u.setFingerprintId((Integer) rs.getObject("fingerprint_id"));
+            u.setFingerprintData(rs.getString("fingerprint_data"));
+            u.setFingerprintEnabled(rs.getBoolean("fingerprint_enabled"));
+            u.setFingerprintEnrolledAt(rs.getTimestamp("fingerprint_enrolled_at"));
             u.setFaceCount(rs.getInt("face_count"));
             return u;
         });
+    }
+
+    /**
+     * Cari user berdasarkan fingerprint ID
+     */
+    public ServerUser findByFingerprintId(int fingerprintId) {
+        if (!hasFingerprintColumns()) {
+            return null;
+        }
+        String sql = "SELECT id, nim, nama, role, password_hash, face_embedding, photo_url, " +
+                "fingerprint_id, fingerprint_data, fingerprint_enabled, fingerprint_enrolled_at, " +
+                "is_active, created_at, updated_at FROM server_users WHERE fingerprint_id = ?";
+        try {
+            List<ServerUser> users = jdbcTemplate1.query(sql, new Object[]{fingerprintId}, (rs, rowNum) -> {
+                ServerUser u = new ServerUser();
+                u.setId(rs.getInt("id"));
+                u.setNim(rs.getString("nim"));
+                u.setNama(rs.getString("nama"));
+                u.setRole(rs.getString("role"));
+                u.setPasswordHash(rs.getString("password_hash"));
+                u.setFaceEmbedding(rs.getString("face_embedding"));
+                u.setPhotoUrl(rs.getString("photo_url"));
+                u.setFingerprintId((Integer) rs.getObject("fingerprint_id"));
+                u.setFingerprintData(rs.getString("fingerprint_data"));
+                u.setFingerprintEnabled(rs.getBoolean("fingerprint_enabled"));
+                u.setFingerprintEnrolledAt(rs.getTimestamp("fingerprint_enrolled_at"));
+                u.setActive(rs.getBoolean("is_active"));
+                u.setCreatedAt(rs.getTimestamp("created_at"));
+                u.setUpdatedAt(rs.getTimestamp("updated_at"));
+                return u;
+            });
+            return users.isEmpty() ? null : users.get(0);
+        } catch (EmptyResultDataAccessException e) {
+            return null;
+        }
     }
 
     /**
@@ -127,6 +203,18 @@ public class ServerUserRepository {
     public void updateFaceEmbedding(String nim, String embedding) throws SQLException {
         String sql = "UPDATE server_users SET face_embedding = ?, updated_at = CURRENT_TIMESTAMP WHERE nim = ?";
         jdbcTemplate1.update(sql, new Object[]{embedding, nim});
+    }
+
+    /**
+     * Update fingerprint data untuk user
+     */
+    public void updateFingerprint(String nim, Integer fingerprintId, String fingerprintData, boolean enabled) throws SQLException {
+        if (!hasFingerprintColumns()) {
+            throw new SQLException("Kolom fingerprint_* belum ada di tabel server_users. Jalankan migrasi DB terlebih dahulu.");
+        }
+        String sql = "UPDATE server_users SET fingerprint_id = ?, fingerprint_data = ?, fingerprint_enabled = ?, " +
+                "fingerprint_enrolled_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE nim = ?";
+        jdbcTemplate1.update(sql, new Object[]{fingerprintId, fingerprintData, enabled, nim});
     }
 
     /**

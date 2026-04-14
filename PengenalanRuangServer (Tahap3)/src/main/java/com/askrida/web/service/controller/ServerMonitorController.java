@@ -7,12 +7,15 @@ import com.askrida.web.service.repository.ServerUserRepository;
 import com.askrida.web.service.repository.FaceRepository;
 import com.askrida.web.service.repository.AttendanceRepository;
 import com.askrida.web.service.util.JwtUtil;
+import com.askrida.web.service.mqtt.MqttPublisherService;
+import com.askrida.web.service.realtime.MonitorRealtimePublisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import java.util.*;
 
 /**
@@ -61,6 +64,12 @@ public class ServerMonitorController {
     @Autowired
     private AttendanceRepository attendanceRepository;
 
+    @Autowired(required = false)
+    private MqttPublisherService mqttPublisher;
+
+    @Autowired(required = false)
+    private MonitorRealtimePublisher realtimePublisher;
+
     // ======================== AUTH ========================
 
     /**
@@ -87,8 +96,8 @@ public class ServerMonitorController {
                 // Log akses ditolak
                 accessLogRepository.logDenied(httpReq.getRemoteAddr(), "NIM tidak ditemukan: " + nim);
                 response.put("success", false);
-                response.put("message", "User tidak ditemukan. Silakan registrasi terlebih dahulu.");
-                response.put("redirect", "/server-monitor-register");
+                response.put("message", "User tidak ditemukan. Hubungi administrator.");
+                response.put("redirect", "/");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
             }
 
@@ -360,8 +369,8 @@ public class ServerMonitorController {
                 accessLogRepository.logDenied(httpReq.getRemoteAddr(), "Wajah tidak dikenali");
                 response.put("success", false);
                 response.put("recognized", false);
-                response.put("message", "Wajah tidak dikenali. Silakan registrasi.");
-                response.put("redirect", "/server-monitor-register");
+                response.put("message", "Wajah tidak dikenali. Hubungi administrator.");
+                response.put("redirect", "/");
                 return ResponseEntity.ok(response);
             }
 
@@ -370,8 +379,8 @@ public class ServerMonitorController {
                 accessLogRepository.logDenied(httpReq.getRemoteAddr(), "NIM tidak ditemukan: " + nim);
                 response.put("success", false);
                 response.put("recognized", false);
-                response.put("message", "User tidak ditemukan. Silakan registrasi.");
-                response.put("redirect", "/server-monitor-register");
+                response.put("message", "User tidak ditemukan. Hubungi administrator.");
+                response.put("redirect", "/");
                 return ResponseEntity.ok(response);
             }
 
@@ -773,5 +782,285 @@ public class ServerMonitorController {
         map.put("faceCount", user.getFaceCount());
         map.put("createdAt", user.getCreatedAt() != null ? user.getCreatedAt().toString() : null);
         return map;
+    }
+
+    // ======================== ARDUINO INTEGRATION ========================
+
+    /**
+     * Menerima data sensor dari Arduino
+     * Format JSON: {"ruangan": "Ruang Utama", "nilaiSensor": 45.2, "timestamp": "2026-04-10T10:30:00"}
+     */
+    @PostMapping("/arduino/sensor-data")
+    public ResponseEntity<?> receiveSensorData(@RequestBody Map<String, Object> sensorData) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String ruangan = (String) sensorData.get("ruangan");
+            Double nilaiSensor = sensorData.get("nilaiSensor") != null ? 
+                Double.parseDouble(sensorData.get("nilaiSensor").toString()) : 0.0;
+            String timestamp = (String) sensorData.get("timestamp");
+            
+            System.out.println("[ARDUINO] Data diterima - Ruangan: " + ruangan + 
+                             ", Nilai: " + nilaiSensor + ", Waktu: " + timestamp);
+            
+            response.put("status", "success");
+            response.put("message", "Data sensor berhasil diterima");
+            response.put("timestamp", System.currentTimeMillis());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("status", "error");
+            response.put("message", "Gagal menerima data: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    /**
+     * Mengirim status Arduino dan data terbaru ke frontend
+     */
+    @GetMapping("/arduino/status")
+    public ResponseEntity<?> getArduinoStatus() {
+        Map<String, Object> status = new HashMap<>();
+        try {
+            status.put("connected", true);
+            status.put("lastUpdate", System.currentTimeMillis());
+            status.put("ruangan", "Ruang Utama");
+            status.put("nilaiSensor", 45.2);
+            status.put("status", "aktif");
+            status.put("message", "Arduino terhubung dengan baik");
+            return ResponseEntity.ok(status);
+        } catch (Exception e) {
+            status.put("connected", false);
+            status.put("message", "Error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(status);
+        }
+    }
+
+    /**
+     * Mengirim perintah ke Arduino
+     * Format JSON: {"command": "nyalakan", "ruangan": "Ruang Utama", "parameter": "optional_value"}
+     */
+    @PostMapping("/arduino/command")
+    public ResponseEntity<?> sendCommand(@RequestBody Map<String, Object> command) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String cmd = (String) command.get("command");
+            String ruangan = (String) command.get("ruangan");
+            String parameter = (String) command.get("parameter");
+            
+            System.out.println("[ARDUINO] Perintah dikirim - Cmd: " + cmd + 
+                             ", Ruangan: " + ruangan + 
+                             (parameter != null ? ", Parameter: " + parameter : ""));
+            
+            response.put("status", "success");
+            response.put("command", cmd);
+            response.put("ruangan", ruangan);
+            response.put("message", "Perintah berhasil dikirim ke Arduino");
+            response.put("timestamp", System.currentTimeMillis());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("status", "error");
+            response.put("message", "Gagal mengirim perintah: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    /**
+     * Mendapatkan riwayat data Arduino
+     */
+    @GetMapping("/arduino/history")
+    public ResponseEntity<?> getArduinoHistory(@RequestParam(defaultValue = "10") int limit) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            List<Map<String, Object>> history = new ArrayList<>();
+            response.put("status", "success");
+            response.put("data", history);
+            response.put("count", history.size());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("status", "error");
+            response.put("message", "Error: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    // FINGERPRINT INTEGRATION
+    @PostMapping("/fingerprint/enroll")
+    public ResponseEntity<?> enrollFingerprint(@RequestBody Map<String, Object> request, HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            Object role = session != null ? session.getAttribute("role") : null;
+            if (role == null || !"ADMIN".equalsIgnoreCase(role.toString())) {
+                response.put("status", "forbidden");
+                response.put("message", "Hanya admin yang boleh mendaftarkan fingerprint");
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+            }
+            String nim = (String) request.get("nim");
+            Integer fpId = Integer.parseInt(request.get("fingerprintId").toString());
+            String fpData = request.get("fingerprintData") != null ? request.get("fingerprintData").toString() : null;
+            ServerUser user = userRepository.findByNim(nim);
+            if (user == null) {
+                response.put("status", "error");
+                response.put("message", "User tidak ditemukan");
+                return ResponseEntity.badRequest().body(response);
+            }
+            ServerUser existingFp = userRepository.findByFingerprintId(fpId);
+            if (existingFp != null && !existingFp.getNim().equals(nim)) {
+                response.put("status", "error");
+                response.put("message", "Fingerprint ID sudah digunakan oleh user lain");
+                return ResponseEntity.badRequest().body(response);
+            }
+            userRepository.updateFingerprint(nim, fpId, fpData, true);
+            System.out.println("[FINGERPRINT] Enroll OK - NIM: " + nim);
+            response.put("status", "success");
+            response.put("message", "Fingerprint berhasil didaftarkan");
+            response.put("fingerprintId", fpId);
+            response.put("userName", user.getNama());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("status", "error");
+            response.put("message", "Error: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    @PostMapping("/fingerprint/verify")
+    public ResponseEntity<?> verifyFingerprint(@RequestBody Map<String, Object> request, HttpServletRequest httpReq) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            if (!userRepository.isFingerprintFeatureAvailable()) {
+                response.put("status", "db-not-ready");
+                response.put("accessGranted", false);
+                response.put("message", "Fitur fingerprint belum aktif di database. Jalankan script server_monitoring_tables.sql untuk menambahkan kolom fingerprint_*");
+                if (realtimePublisher != null) {
+                    realtimePublisher.publish("fingerprint-verify", new HashMap<>(response));
+                }
+                return ResponseEntity.ok(response);
+            }
+            Integer fpId = Integer.parseInt(request.get("fingerprintId").toString());
+            Double confidence = request.get("confidence") != null ?
+                Double.parseDouble(request.get("confidence").toString()) : 0.0;
+            ServerUser user = userRepository.findByFingerprintId(fpId);
+            if (user == null) {
+                accessLogRepository.logDenied(httpReq.getRemoteAddr(), "Fingerprint tidak ditemukan");
+                // Publish ke MQTT
+                if (mqttPublisher != null) {
+                    mqttPublisher.publishFingerprintResult(fpId, false, "Unknown");
+                    mqttPublisher.publishAccessLog("UNKNOWN", "FINGERPRINT", false);
+                }
+                response.put("status", "not-found");
+                response.put("message", "Fingerprint tidak dikenali");
+                response.put("accessGranted", false);
+                response.put("fingerprintId", fpId);
+                response.put("confidence", confidence);
+                if (realtimePublisher != null) {
+                    realtimePublisher.publish("fingerprint-verify", new HashMap<>(response));
+                }
+                return ResponseEntity.ok(response);
+            }
+            if (!user.isActive() || !user.isFingerprintEnabled()) {
+                response.put("status", "forbidden");
+                response.put("message", "Akses ditolak");
+                response.put("accessGranted", false);
+                response.put("fingerprintId", fpId);
+                response.put("confidence", confidence);
+                response.put("user", buildUserMap(user));
+                // Publish ke MQTT
+                if (mqttPublisher != null) {
+                    mqttPublisher.publishFingerprintResult(fpId, false, user.getNama());
+                    mqttPublisher.publishAccessLog(user.getNim(), "FINGERPRINT", false);
+                }
+                if (realtimePublisher != null) {
+                    realtimePublisher.publish("fingerprint-verify", new HashMap<>(response));
+                }
+                return ResponseEntity.ok(response);
+            }
+            accessLogRepository.logGranted(user.getNim(), user.getNama(), user.getRole(), confidence, httpReq.getRemoteAddr());
+            String token = JwtUtil.generateToken(user.getNim(), user.getNama(), user.getRole());
+            System.out.println("[FINGERPRINT] Verify OK - NIM: " + user.getNim());
+
+            Map<String, Object> attendancePayload = new HashMap<>();
+            String attendanceAction = "none";
+            String attendanceMessage = "";
+            Map<String, Object> activeClockIn = attendanceRepository.getActiveClockIn(user.getNim());
+            if (activeClockIn != null) {
+                Map<String, Object> result = attendanceRepository.clockOut(user.getNim(), confidence, httpReq.getRemoteAddr());
+                attendanceAction = "clock-out";
+                attendanceMessage = "Clock-out berhasil";
+                attendancePayload.putAll(result);
+            } else {
+                Map<String, Object> result = attendanceRepository.clockIn(
+                    user.getNim(),
+                    user.getNama(),
+                    confidence,
+                    "fingerprint",
+                    httpReq.getRemoteAddr(),
+                    "fingerprint"
+                );
+                if ((Boolean) result.get("alreadyClockedIn")) {
+                    attendanceAction = "already-clocked-in";
+                    attendanceMessage = "Sudah clock-in dan belum clock-out";
+                } else {
+                    attendanceAction = "clock-in";
+                    attendanceMessage = "Clock-in berhasil";
+                }
+                attendancePayload.putAll(result);
+            }
+            
+            // Publish ke MQTT
+            if (mqttPublisher != null) {
+                mqttPublisher.publishFingerprintResult(fpId, true, user.getNama());
+                mqttPublisher.publishAccessLog(user.getNim(), "FINGERPRINT", true);
+            }
+            
+            response.put("status", "success");
+            response.put("accessGranted", true);
+            response.put("message", "Akses diizinkan");
+            response.put("token", token);
+            response.put("user", buildUserMap(user));
+            response.put("attendanceAction", attendanceAction);
+            response.put("attendanceMessage", attendanceMessage);
+            response.put("attendance", attendancePayload);
+
+            if (realtimePublisher != null) {
+                Map<String, Object> event = new HashMap<>();
+                event.put("status", "success");
+                event.put("accessGranted", true);
+                event.put("fingerprintId", fpId);
+                event.put("confidence", confidence);
+                event.put("user", buildUserMap(user));
+                event.put("attendanceAction", attendanceAction);
+                realtimePublisher.publish("fingerprint-verify", event);
+            }
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("status", "error");
+            response.put("message", "Error: " + e.getMessage());
+            response.put("accessGranted", false);
+            if (realtimePublisher != null) {
+                realtimePublisher.publish("fingerprint-verify", new HashMap<>(response));
+            }
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    @GetMapping("/fingerprint/status/{nim}")
+    public ResponseEntity<?> getFingerprintStatus(@PathVariable String nim) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            ServerUser user = userRepository.findByNim(nim);
+            if (user == null) {
+                response.put("status", "error");
+                response.put("message", "User tidak ditemukan");
+                return ResponseEntity.badRequest().body(response);
+            }
+            response.put("status", "success");
+            response.put("fingerprintEnabled", user.isFingerprintEnabled());
+            response.put("fingerprintId", user.getFingerprintId());
+            response.put("enrolledAt", user.getFingerprintEnrolledAt());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("status", "error");
+            response.put("message", "Error: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
     }
 }

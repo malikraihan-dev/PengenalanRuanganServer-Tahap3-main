@@ -33,6 +33,32 @@
             --radius: 14px;
         }
 
+        /* ===== DARK MODE ===== */
+        html[data-theme="dark"] {
+            --bg: #0f1117;
+            --bg-card: #161b22;
+            --bg-sidebar: #0d1117;
+            --border: #30363d;
+            --text: #e6edf3;
+            --text-muted: #8b949e;
+            --text-light: #6e7681;
+            --primary: #58a6ff;
+            --primary-light: #1f6feb;
+            --success: #3fb950;
+            --success-light: #238636;
+            --warning: #d29922;
+            --warning-light: #3d2601;
+            --danger: #f85149;
+            --danger-light: #3d1f1a;
+            --purple: #bc8ef9;
+            --purple-light: #3d2d56;
+            --info: #79c0ff;
+        }
+
+        /* Scrollbar dark mode */
+        html[data-theme="dark"] ::-webkit-scrollbar-thumb { background: #444444; }
+        html[data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: #555555; }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
@@ -202,54 +228,104 @@
         .content { padding: 28px 32px; }
 
         /* ===== STAT CARDS ROW ===== */
+        /* ===== STAT CARDS ROW ===== */
         .stat-row {
-            display: grid; grid-template-columns: repeat(4, 1fr);
-            gap: 20px; margin-bottom: 24px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 24px;
         }
 
+        /* Stat card gaya Uiverse */
         .stat-card {
-            background: var(--bg-card); border-radius: var(--radius); padding: 22px 24px;
-            box-shadow: var(--shadow-sm); border: 1px solid var(--border);
-            position: relative; overflow: hidden;
+            padding: 1rem 1.25rem;
+            background-color: var(--bg-card);
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1),
+                        0 4px 6px -2px rgba(0,0,0,0.05);
+            border-radius: 20px;
+            border: 1px solid var(--border);
             transition: all 0.25s ease;
         }
-
         .stat-card:hover {
             box-shadow: var(--shadow-md);
             transform: translateY(-2px);
         }
 
-        .stat-card-head {
-            display: flex; justify-content: space-between; align-items: flex-start;
-            margin-bottom: 14px;
+        .stat-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
 
-        .stat-card-label { font-size: 13px; color: var(--text-muted); font-weight: 500; }
-
-        .stat-card-icon {
-            width: 42px; height: 42px; border-radius: 10px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 18px;
+        .stat-card-header-left {
+            display: flex;
+            align-items: center;
         }
 
-        .stat-card-icon.blue { background: var(--primary-light); color: var(--primary); }
-        .stat-card-icon.green { background: var(--success-light); color: var(--success); }
-        .stat-card-icon.orange { background: var(--warning-light); color: var(--warning); }
-        .stat-card-icon.purple { background: var(--purple-light); color: var(--purple); }
-
-        .stat-card-value {
-            font-size: 32px; font-weight: 800; color: var(--text);
-            letter-spacing: -1px; line-height: 1;
+        .stat-card-dot {
+            position: relative;
+            padding: 0.5rem;
+            background: linear-gradient(135deg, var(--warning), var(--success));
+            width: 1.5rem;
+            height: 1.5rem;
+            border-radius: 9999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-size: 0.9rem;
         }
 
-        .stat-card-change {
-            display: inline-flex; align-items: center; gap: 4px;
-            font-size: 12px; font-weight: 600; margin-top: 10px;
+        .stat-card-title-text {
+            margin-left: 0.5rem;
+            color: var(--text);
+            font-size: 16px;
+            font-weight: 600;
         }
 
-        .stat-card-change.up { color: var(--success); }
-        .stat-card-change.down { color: var(--danger); }
-        .stat-card-change .change-text { color: var(--text-muted); font-weight: 400; }
+        .stat-card-percent {
+            margin-left: 0.5rem;
+            color: var(--success);
+            font-weight: 600;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+        }
+
+        .stat-card-data {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            margin-top: 1rem;
+        }
+
+        .stat-card-data p {
+            margin-top: 0;
+            margin-bottom: 1rem;
+            color: var(--text);
+            font-size: 2.1rem;
+            line-height: 2.4rem;
+            font-weight: 700;
+            text-align: left;
+        }
+
+        .stat-card-range {
+            position: relative;
+            background-color: var(--border);
+            width: 100%;
+            height: 0.5rem;
+            border-radius: 0.25rem;
+        }
+
+        .stat-card-fill {
+            position: absolute;
+            top: 0;
+            left: 0;
+            background: linear-gradient(90deg, var(--warning), var(--success));
+            width: 76%;
+            height: 100%;
+            border-radius: 0.25rem;
+        }
 
         /* ===== CARDS ===== */
         .card {
@@ -534,6 +610,47 @@
 
         .btn-clock:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
 
+        .fingerprint-panel {
+            margin-top: 16px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px 16px;
+        }
+        .fingerprint-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .fingerprint-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-light);
+        }
+        .fingerprint-dot.enabled {
+            background: var(--success);
+            box-shadow: 0 0 8px rgba(46, 196, 182, 0.5);
+        }
+        .fingerprint-dot.disabled {
+            background: var(--warning);
+        }
+        .fingerprint-meta {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 6px;
+        }
+        .fingerprint-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
+        .fingerprint-row strong { color: var(--text); }
+
         /* ===== PROFILE ===== */
         .profile-container { display: grid; grid-template-columns: 240px 1fr; gap: 28px; }
 
@@ -726,11 +843,6 @@
             <span>Monitor Server</span>
         </a>
 
-        <div class="nav-label" style="margin-top:18px;">Pengaturan</div>
-        <a class="nav-item" href="#" onclick="switchTab('profile'); return false;">
-            <span class="nav-icon">&#9881;</span>
-            <span>Settings</span>
-        </a>
         <a class="nav-item" href="/logout" style="color: var(--danger);">
             <span class="nav-icon">&#128682;</span>
             <span>Sign Out</span>
@@ -780,56 +892,91 @@
         <div id="alertBox" class="alert"></div>
 
         <!-- TABS -->
-        <div class="tabs animate-in delay-1">
+        <!-- <div class="tabs animate-in delay-1">
             <div class="tab active" onclick="switchTab('overview')">&#9632; Overview</div>
             <div class="tab" onclick="switchTab('attendance')">&#128336; Absensi</div>
             <div class="tab" onclick="switchTab('history')">&#128203; Riwayat</div>
             <div class="tab" onclick="switchTab('profile')">&#128100; Profil</div>
-        </div>
+        </div> -->
 
         <!-- ==================== TAB: OVERVIEW ==================== -->
         <div id="tab-overview" class="tab-content active">
 
             <!-- 4 STAT CARDS -->
             <div class="stat-row">
+                <!-- Status Hari Ini -->
                 <div class="stat-card animate-in delay-1">
-                    <div class="stat-card-head">
-                        <div class="stat-card-label">Status Hari Ini</div>
-                        <div class="stat-card-icon blue">&#128336;</div>
+                    <div class="stat-card-header">
+                        <div class="stat-card-header-left">
+                            <div class="stat-card-dot">&#128336;</div>
+                            <div class="stat-card-title-text">Status Hari Ini</div>
+                        </div>
+                        <div class="stat-card-percent" id="statStatusChange">
+                            live update
+                        </div>
                     </div>
-                    <div class="stat-card-value" id="statStatus" style="font-size:24px;">-</div>
-                    <div class="stat-card-change up" id="statStatusChange">
-                        <span>&#9650;</span> <span class="change-text">live update</span>
+                    <div class="stat-card-data">
+                        <p id="statStatus">-</p>
+                        <div class="stat-card-range">
+                            <div class="stat-card-fill"></div>
+                        </div>
                     </div>
                 </div>
+
+                <!-- Total Kehadiran -->
                 <div class="stat-card animate-in delay-2">
-                    <div class="stat-card-head">
-                        <div class="stat-card-label">Total Kehadiran</div>
-                        <div class="stat-card-icon green">&#9989;</div>
+                    <div class="stat-card-header">
+                        <div class="stat-card-header-left">
+                            <div class="stat-card-dot" style="background:#10B981;">&#9989;</div>
+                            <div class="stat-card-title-text">Total Kehadiran</div>
+                        </div>
+                        <div class="stat-card-percent">
+                            semua waktu
+                        </div>
                     </div>
-                    <div class="stat-card-value" id="statTotalAttendance">0</div>
-                    <div class="stat-card-change up">
-                        <span>&#9650;</span> <span class="change-text">semua waktu</span>
+                    <div class="stat-card-data">
+                        <p id="statTotalAttendance">0</p>
+                        <div class="stat-card-range">
+                            <div class="stat-card-fill"></div>
+                        </div>
                     </div>
                 </div>
+
+                <!-- Foto Wajah -->
                 <div class="stat-card animate-in delay-3">
-                    <div class="stat-card-head">
-                        <div class="stat-card-label">Foto Wajah</div>
-                        <div class="stat-card-icon orange">&#128247;</div>
+                    <div class="stat-card-header">
+                        <div class="stat-card-header-left">
+                            <div class="stat-card-dot" style="background:#F59E0B;">&#128247;</div>
+                            <div class="stat-card-title-text">Foto Wajah</div>
+                        </div>
+                        <div class="stat-card-percent">
+                            terdaftar
+                        </div>
                     </div>
-                    <div class="stat-card-value" id="statFaceCount">0</div>
-                    <div class="stat-card-change up">
-                        <span>&#9650;</span> <span class="change-text">terdaftar</span>
+                    <div class="stat-card-data">
+                        <p id="statFaceCount">0</p>
+                        <div class="stat-card-range">
+                            <div class="stat-card-fill"></div>
+                        </div>
                     </div>
                 </div>
+
+                <!-- Total Akses Log -->
                 <div class="stat-card animate-in delay-4">
-                    <div class="stat-card-head">
-                        <div class="stat-card-label">Total Akses Log</div>
-                        <div class="stat-card-icon purple">&#128274;</div>
+                    <div class="stat-card-header">
+                        <div class="stat-card-header-left">
+                            <div class="stat-card-dot" style="background:#7C3AED;">&#128274;</div>
+                            <div class="stat-card-title-text">Total Akses Log</div>
+                        </div>
+                        <div class="stat-card-percent">
+                            tercatat
+                        </div>
                     </div>
-                    <div class="stat-card-value" id="statAccessLogs">0</div>
-                    <div class="stat-card-change up">
-                        <span>&#9650;</span> <span class="change-text">tercatat</span>
+                    <div class="stat-card-data">
+                        <p id="statAccessLogs">0</p>
+                        <div class="stat-card-range">
+                            <div class="stat-card-fill"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -948,10 +1095,10 @@
                 </div>
             </div>
 
-        </div>
+        </div> 
 
         <!-- ==================== TAB: ABSENSI ==================== -->
-        <div id="tab-attendance" class="tab-content">
+        <div id="tab-attendance" class="tab-content"> 
             <div class="card">
                 <div class="card-header">
                     <div class="card-title">&#128247; Absensi Wajah &mdash; Clock In / Clock Out</div>
@@ -993,13 +1140,28 @@
                                 &#9632; Clock Out
                             </button>
                         </div>
+                        <div class="fingerprint-panel">
+                            <div class="fingerprint-status">
+                                <span class="fingerprint-dot" id="fingerprintDot"></span>
+                                <span id="fingerprintStatusText">Status fingerprint belum dimuat.</span>
+                            </div>
+                            <div class="fingerprint-meta" id="fingerprintStatusMeta">Silakan tunggu...</div>
+                            <div class="fingerprint-row">
+                                <span>ID Fingerprint</span>
+                                <strong id="fingerprintIdDisplay">-</strong>
+                            </div>
+                            <div class="fingerprint-row">
+                                <span>Terdaftar</span>
+                                <strong id="fingerprintEnrollDisplay">-</strong>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </div> 
 
         <!-- ==================== TAB: RIWAYAT ==================== -->
-        <div id="tab-history" class="tab-content">
+        <div id="tab-history" class="tab-content"> 
             <div class="card" style="margin-bottom:20px;">
                 <div class="card-header">
                     <div class="card-title">&#128203; Riwayat Kehadiran Lengkap</div>
@@ -1051,7 +1213,7 @@
         </div>
 
         <!-- ==================== TAB: PROFIL ==================== -->
-        <div id="tab-profile" class="tab-content">
+        <div id="tab-profile" class="tab-content"> 
             <div class="card">
                 <div class="card-header">
                     <div class="card-title">&#128100; Profil Saya</div>
@@ -1078,6 +1240,10 @@
                                 <div class="detail-item">
                                     <div class="detail-label">Jumlah Foto Wajah</div>
                                     <div class="detail-value" id="profileFaceCount">0</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Status Fingerprint</div>
+                                    <div class="detail-value" id="profileFingerprintStatus">Belum Terdaftar</div>
                                 </div>
                                 <div class="detail-item">
                                     <div class="detail-label">Terdaftar Sejak</div>
@@ -1118,9 +1284,9 @@
     </div><!-- end content -->
 
     <!-- FOOTER -->
-    <footer style="padding:20px 32px; text-align:center; color:var(--text-light); font-size:12px; border-top:1px solid var(--border);">
+    <!-- <footer style="padding:20px 32px; text-align:center; color:var(--text-light); font-size:12px; border-top:1px solid var(--border);">
         &copy; 2026 RuangServer Monitoring System &mdash; User Dashboard v3.0
-    </footer>
+    </footer> -->
 
 </div><!-- end main -->
 
@@ -1134,31 +1300,60 @@
     let allFaceDescriptors = [];
     let userProfileData = null;
 
+    // ===== THEME =====
+    function setTheme(theme) {
+        if (theme === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            localStorage.setItem('appTheme', 'dark');
+            document.querySelectorAll('.toggle-dot').forEach((dot, i) => {
+                dot.classList.toggle('active', i === 1);
+            });
+        } else {
+            document.documentElement.removeAttribute('data-theme');
+            localStorage.setItem('appTheme', 'light');
+            document.querySelectorAll('.toggle-dot').forEach((dot, i) => {
+                dot.classList.toggle('active', i === 0);
+            });
+        }
+    }
+
+    function loadTheme() {
+        const savedTheme = localStorage.getItem('appTheme') || 'light';
+        setTheme(savedTheme);
+    }
+
+    function toggleTheme() {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        setTheme(currentTheme === 'dark' ? 'light' : 'dark');
+    }
+
     // ===== INIT =====
     document.addEventListener('DOMContentLoaded', () => {
+        loadTheme();
+        document.querySelectorAll('.toggle-dot').forEach(dot => {
+            dot.style.cursor = 'pointer';
+            dot.addEventListener('click', toggleTheme);
+        });
         updateClock();
         setInterval(updateClock, 1000);
         updateTopbarDate();
         loadUserProfile();
-        // Wait for faceapi to be available then load models
-        waitForFaceApi().then(() => loadFaceApi());
+        initFaceApi();
     });
 
-    function waitForFaceApi(maxWait = 15000) {
-        return new Promise((resolve, reject) => {
-            if (typeof faceapi !== 'undefined') { resolve(); return; }
-            const start = Date.now();
-            const check = setInterval(() => {
-                if (typeof faceapi !== 'undefined') {
-                    clearInterval(check);
-                    resolve();
-                } else if (Date.now() - start > maxWait) {
-                    clearInterval(check);
-                    console.error('face-api.js library failed to load from CDN');
-                    reject(new Error('face-api.js not loaded'));
-                }
-            }, 300);
-        });
+    async function initFaceApi() {
+        // Wait until faceapi global is available
+        let waited = 0;
+        while (typeof faceapi === 'undefined' && waited < 15000) {
+            await new Promise(r => setTimeout(r, 500));
+            waited += 500;
+        }
+        if (typeof faceapi === 'undefined') {
+            console.error('face-api.js failed to load from CDN');
+            showToast('Library Face API gagal dimuat. Coba refresh halaman.', 'error');
+            return;
+        }
+        await loadFaceApi();
     }
 
     // ===== CLOCK =====
@@ -1192,44 +1387,35 @@
     // ===== FACE API =====
     const MODEL_URLS = [
         'https://justadudewhohacks.github.io/face-api.js/models',
-        'https://cdn.jsdelivr.net/gh/nicehash/nicehash-face-api@master/weights',
-        'https://raw.githubusercontent.com/nicehash/nicehash-face-api/master/weights'
+        'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights',
+        'https://cdn.jsdelivr.net/gh/nicehash/nicehash-face-api@master/weights'
     ];
 
-    async function tryLoadModels(url) {
-        console.log('Trying model URL:', url);
-        await faceapi.nets.tinyFaceDetector.loadFromUri(url);
-        await faceapi.nets.faceLandmark68Net.loadFromUri(url);
-        await faceapi.nets.faceRecognitionNet.loadFromUri(url);
-        await faceapi.nets.ssdMobilenetv1.loadFromUri(url);
-    }
-
     async function loadFaceApi() {
-        if (typeof faceapi === 'undefined') {
-            console.error('face-api.js library not available');
-            showToast('Library Face API gagal dimuat. Coba refresh halaman.', 'error');
-            return;
-        }
-
         showToast('Memuat model Face API...', 'info');
-
-        for (let i = 0; i < MODEL_URLS.length; i++) {
+        for (const url of MODEL_URLS) {
             try {
-                await tryLoadModels(MODEL_URLS[i]);
+                console.log('Trying model URL:', url);
+                await faceapi.nets.tinyFaceDetector.loadFromUri(url);
+                await faceapi.nets.faceLandmark68Net.loadFromUri(url);
+                await faceapi.nets.faceRecognitionNet.loadFromUri(url);
+                await faceapi.nets.ssdMobilenetv1.loadFromUri(url);
                 faceApiLoaded = true;
-                console.log('Face API models loaded from:', MODEL_URLS[i]);
+                console.log('Face API models loaded from:', url);
                 showToast('Face API siap digunakan!', 'success');
                 await loadAllFaceDescriptors();
-                updateAttendStatusAfterFaceApi();
+                // Update camera status if already active
+                const statusEl = document.getElementById('attendStatus');
+                if (statusEl && attendStream) {
+                    statusEl.textContent = 'Kamera aktif. Siap untuk absensi wajah.';
+                }
                 return;
             } catch (e) {
-                console.warn('Failed to load from ' + MODEL_URLS[i] + ':', e.message);
+                console.warn('Failed from ' + url + ':', e.message);
             }
         }
-
-        // All URLs failed
         console.error('All model URLs failed');
-        showToast('Gagal memuat model Face API dari semua sumber. Coba refresh.', 'error');
+        showToast('Gagal memuat model Face API. Kamera tetap bisa digunakan.', 'error');
     }
 
     async function loadAllFaceDescriptors() {
@@ -1325,6 +1511,7 @@
                 renderStats(data);
                 renderCharts(data);
                 loadAttendanceStatus();
+                loadFingerprintStatus();
                 loadRecentHistory(data);
                 loadFullHistory(data);
             }
@@ -1531,7 +1718,7 @@
 
         if (tab === 'attendance') {
             loadAttendanceStatus();
-            // Auto-start camera when switching to attendance tab
+            loadFingerprintStatus();
             startAttendCamera();
         }
     }
@@ -1544,6 +1731,43 @@
             const data = await res.json();
             updateClockButtons(data.isClockedIn, data.activeClockIn);
         } catch (e) { console.error('Error:', e); }
+    }
+
+    async function loadFingerprintStatus() {
+        if (!userNim) return;
+        const statusText = document.getElementById('fingerprintStatusText');
+        const statusMeta = document.getElementById('fingerprintStatusMeta');
+        const statusDot = document.getElementById('fingerprintDot');
+        const fingerprintIdDisplay = document.getElementById('fingerprintIdDisplay');
+        const fingerprintEnrollDisplay = document.getElementById('fingerprintEnrollDisplay');
+        const profileFingerprintStatus = document.getElementById('profileFingerprintStatus');
+        try {
+            const res = await fetch('/api/monitor/fingerprint/status/' + userNim);
+            const data = await res.json();
+            if (data.status !== 'success') {
+                if (statusText) statusText.textContent = 'Status fingerprint tidak tersedia.';
+                if (statusMeta) statusMeta.textContent = data.message || 'Coba refresh halaman.';
+                if (statusDot) statusDot.className = 'fingerprint-dot disabled';
+                if (profileFingerprintStatus) profileFingerprintStatus.textContent = 'Tidak tersedia';
+                return;
+            }
+
+            const enabled = !!data.fingerprintEnabled;
+            const fpId = data.fingerprintId != null ? data.fingerprintId : '-';
+            const enrolledAt = data.enrolledAt ? new Date(data.enrolledAt).toLocaleString('id-ID') : '-';
+
+            if (statusDot) statusDot.className = enabled ? 'fingerprint-dot enabled' : 'fingerprint-dot disabled';
+            if (statusText) statusText.textContent = enabled ? 'Fingerprint aktif untuk absensi.' : 'Fingerprint belum aktif.';
+            if (statusMeta) statusMeta.textContent = enabled ? 'Gunakan sensor untuk clock-in/clock-out.' : 'Hubungi admin untuk pendaftaran.';
+            if (fingerprintIdDisplay) fingerprintIdDisplay.textContent = fpId;
+            if (fingerprintEnrollDisplay) fingerprintEnrollDisplay.textContent = enrolledAt;
+            if (profileFingerprintStatus) profileFingerprintStatus.textContent = enabled ? 'Aktif (ID ' + fpId + ')' : 'Belum Terdaftar';
+        } catch (e) {
+            if (statusText) statusText.textContent = 'Gagal memuat status fingerprint.';
+            if (statusMeta) statusMeta.textContent = e.message || 'Coba refresh halaman.';
+            if (statusDot) statusDot.className = 'fingerprint-dot disabled';
+            if (profileFingerprintStatus) profileFingerprintStatus.textContent = 'Tidak tersedia';
+        }
     }
 
     function updateClockButtons(isClockedIn, activeClockIn) {
@@ -1572,31 +1796,21 @@
 
     // ===== CAMERA =====
     async function startAttendCamera() {
+        if (attendStream) return; // already active
         try {
             const video = document.getElementById('attendVideo');
-            if (attendStream) {
-                // Camera already active
-                return;
-            }
             attendStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 640, height: 480 } });
             video.srcObject = attendStream;
             await video.play();
             document.getElementById('btnStartAttendCam').style.display = 'none';
-            if (!faceApiLoaded) {
-                document.getElementById('attendStatus').innerHTML = 'Kamera aktif. <span style="color:var(--warning)">&#9888; Face API sedang dimuat...</span>';
-            } else {
+            if (faceApiLoaded) {
                 document.getElementById('attendStatus').textContent = 'Kamera aktif. Siap untuk absensi wajah.';
+            } else {
+                document.getElementById('attendStatus').innerHTML = 'Kamera aktif. <span style="color:var(--warning)">Face API sedang dimuat...</span>';
             }
         } catch (e) {
             showToast('Gagal mengakses kamera: ' + e.message, 'error');
             console.error('Camera error:', e);
-        }
-    }
-
-    function updateAttendStatusAfterFaceApi() {
-        const statusEl = document.getElementById('attendStatus');
-        if (statusEl && attendStream) {
-            statusEl.textContent = 'Kamera aktif. Siap untuk absensi wajah.';
         }
     }
 
@@ -1617,8 +1831,6 @@
                     confidence = 1 - match.distance;
                 }
             } catch (e) { console.log('Face detection skipped:', e.message); }
-        } else if (!faceApiLoaded) {
-            console.log('Face API not loaded yet, proceeding without face verification');
         }
 
         try {
@@ -1657,8 +1869,6 @@
                     confidence = 1 - match.distance;
                 }
             } catch (e) { console.log('Face detection skipped:', e.message); }
-        } else if (!faceApiLoaded) {
-            console.log('Face API not loaded yet, proceeding without face verification');
         }
 
         try {

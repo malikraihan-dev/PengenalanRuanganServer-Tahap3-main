@@ -1307,10 +1307,6 @@
                 <span class="nav-icon">&#128421;</span>
                 <span>Monitor Server</span>
             </a>
-            <a class="nav-item" href="/server-monitor-register">
-                <span class="nav-icon">&#9881;</span>
-                <span>Registrasi Server</span>
-            </a>
             <a class="nav-item" href="/user-management">
                 <span class="nav-icon">&#128100;</span>
                 <span>User Panel</span>
@@ -1331,16 +1327,16 @@
             </a>
 
             <div class="nav-label">Pengaturan</div>
-            <a class="nav-item" href="#" onclick="refreshData()">
+            <!-- <a class="nav-item" href="#" onclick="refreshData()">
                 <span class="nav-icon">&#8635;</span>
                 <span>Refresh Data</span>
-            </a>
+            </a> -->
             <a class="nav-item logout-btn" href="/logout">
                 <span class="nav-icon">&#9211;</span>
                 <span>Logout</span>
             </a>
         </nav>
-        <div class="sidebar-footer">
+        <!-- <div class="sidebar-footer">
             <div class="user-profile-mini">
                 <div class="user-avatar-sm" th:text="${username != null ? username.substring(0,1).toUpperCase() : 'A'}">A</div>
                 <div>
@@ -1349,7 +1345,7 @@
                 </div>
             </div>
             <div class="version">RuangServer v3.0</div>
-        </div>
+        </div> -->
     </aside>
 
     <!-- MAIN CONTENT -->
@@ -1923,6 +1919,92 @@
                 closeUserMenu();
             }
         });
+
+        // ===== ARDUINO MONITORING =====
+        // Polling status Arduino setiap 5 detik
+        let arduinoStatusInterval;
+        
+        function startArduinoMonitoring() {
+            // Initial fetch
+            fetchArduinoStatus();
+            
+            // Set polling interval
+            arduinoStatusInterval = setInterval(fetchArduinoStatus, 5000);
+            console.log('[Arduino] Monitoring started');
+        }
+        
+        function fetchArduinoStatus() {
+            fetch('/api/monitor/arduino/status')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.connected) {
+                        updateArduinoUI(data);
+                    } else {
+                        console.warn('[Arduino] Connection failed');
+                    }
+                })
+                .catch(err => console.error('[Arduino] Fetch error:', err));
+        }
+        
+        function updateArduinoUI(data) {
+            const ruanganEl = document.getElementById('arduino-ruangan');
+            const sensorEl = document.getElementById('arduino-sensor');
+            const statusEl = document.getElementById('arduino-connection-status');
+            const timestampEl = document.getElementById('arduino-timestamp');
+            
+            if (ruanganEl) ruanganEl.textContent = data.ruangan || '-';
+            if (sensorEl) sensorEl.textContent = (data.nilaiSensor || 0).toFixed(2);
+            if (statusEl) {
+                statusEl.textContent = data.status === 'aktif' ? '🟢 Aktif' : '🔴 Tidak Aktif';
+                statusEl.style.color = data.status === 'aktif' ? '#22c55e' : '#ef4444';
+            }
+            if (timestampEl) timestampEl.textContent = new Date(data.lastUpdate).toLocaleString('id-ID');
+        }
+        
+        function sendArduinoCommand(command, ruangan) {
+            fetch('/api/monitor/arduino/command', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    command: command, 
+                    ruangan: ruangan || 'Ruang Utama',
+                    parameter: null
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert('✅ Perintah berhasil dikirim: ' + command);
+                    console.log('[Arduino] Command sent:', data);
+                } else {
+                    alert('❌ Gagal mengirim perintah');
+                }
+            })
+            .catch(err => {
+                console.error('[Arduino] Command error:', err);
+                alert('❌ Error: ' + err.message);
+            });
+        }
+        
+        function sendSensorData(ruangan, nilaiSensor) {
+            fetch('/api/monitor/arduino/sensor-data', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    ruangan: ruangan,
+                    nilaiSensor: nilaiSensor,
+                    timestamp: new Date().toISOString()
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                console.log('[Arduino] Sensor data sent:', data);
+            })
+            .catch(err => console.error('[Arduino] Sensor error:', err));
+        }
+        
+        // Start monitoring when page loads
+        window.addEventListener('load', startArduinoMonitoring);
     </script>
 
 </body>

@@ -12,13 +12,27 @@ CREATE TABLE IF NOT EXISTS server_users (
     password_hash VARCHAR(255),
     face_embedding TEXT,
     photo_url TEXT,
+    fingerprint_id INT,
+    fingerprint_data TEXT,
+    fingerprint_enabled BOOLEAN DEFAULT FALSE,
+    fingerprint_enrolled_at TIMESTAMP,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Jika tabel sudah terlanjur dibuat tanpa kolom fingerprint, tambahkan kolomnya.
+ALTER TABLE server_users ADD COLUMN IF NOT EXISTS fingerprint_id INT;
+ALTER TABLE server_users ADD COLUMN IF NOT EXISTS fingerprint_data TEXT;
+ALTER TABLE server_users ADD COLUMN IF NOT EXISTS fingerprint_enabled BOOLEAN DEFAULT FALSE;
+ALTER TABLE server_users ADD COLUMN IF NOT EXISTS fingerprint_enrolled_at TIMESTAMP;
+
 CREATE INDEX IF NOT EXISTS idx_server_users_nim ON server_users(nim);
 CREATE INDEX IF NOT EXISTS idx_server_users_role ON server_users(role);
+-- Fingerprint ID sebaiknya unik untuk mencegah 1 ID dipakai banyak user
+CREATE UNIQUE INDEX IF NOT EXISTS idx_server_users_fingerprint_id
+    ON server_users(fingerprint_id)
+    WHERE fingerprint_id IS NOT NULL;
 
 -- 2. TABEL ACCESS LOG (Log Aktivitas Akses Ruang Server)
 CREATE TABLE IF NOT EXISTS access_log (
