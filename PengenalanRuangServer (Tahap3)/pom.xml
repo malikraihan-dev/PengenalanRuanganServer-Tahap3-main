@@ -9,10 +9,10 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.askrida.web.service</groupId>
-	<artifactId>absensiRuanganTU</artifactId>
+	<artifactId>RuangServer</artifactId>
 	<version>0.0.1</version>
-	<name>absensiRuanganTU</name>
-	<description>absensiRuanganTU</description>
+	<name>RuangServer</name>
+	<description>RuangServer</description>
 	<properties>
 		<java.version>17</java.version>
 	</properties>
@@ -24,6 +24,10 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-websocket</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
