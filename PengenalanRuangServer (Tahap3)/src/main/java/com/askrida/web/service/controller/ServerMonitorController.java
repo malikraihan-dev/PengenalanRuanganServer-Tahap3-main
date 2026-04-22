@@ -8,6 +8,7 @@ import com.askrida.web.service.repository.FaceRepository;
 import com.askrida.web.service.repository.AttendanceRepository;
 import com.askrida.web.service.util.JwtUtil;
 import com.askrida.web.service.mqtt.MqttPublisherService;
+import com.askrida.web.service.realtime.MonitorRealtimePublisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -65,6 +66,9 @@ public class ServerMonitorController {
 
     @Autowired(required = false)
     private MqttPublisherService mqttPublisher;
+
+    @Autowired(required = false)
+    private MonitorRealtimePublisher realtimePublisher;
 
     // ======================== AUTH ========================
 
@@ -926,6 +930,9 @@ public class ServerMonitorController {
                 response.put("status", "db-not-ready");
                 response.put("accessGranted", false);
                 response.put("message", "Fitur fingerprint belum aktif di database. Jalankan script server_monitoring_tables.sql untuk menambahkan kolom fingerprint_*");
+                if (realtimePublisher != null) {
+                    realtimePublisher.publish("fingerprint-verify", new HashMap<>(response));
+                }
                 return ResponseEntity.ok(response);
             }
             Integer fpId = Integer.parseInt(request.get("fingerprintId").toString());
@@ -942,16 +949,27 @@ public class ServerMonitorController {
                 response.put("status", "not-found");
                 response.put("message", "Fingerprint tidak dikenali");
                 response.put("accessGranted", false);
+                response.put("fingerprintId", fpId);
+                response.put("confidence", confidence);
+                if (realtimePublisher != null) {
+                    realtimePublisher.publish("fingerprint-verify", new HashMap<>(response));
+                }
                 return ResponseEntity.ok(response);
             }
             if (!user.isActive() || !user.isFingerprintEnabled()) {
                 response.put("status", "forbidden");
                 response.put("message", "Akses ditolak");
                 response.put("accessGranted", false);
+                response.put("fingerprintId", fpId);
+                response.put("confidence", confidence);
+                response.put("user", buildUserMap(user));
                 // Publish ke MQTT
                 if (mqttPublisher != null) {
                     mqttPublisher.publishFingerprintResult(fpId, false, user.getNama());
                     mqttPublisher.publishAccessLog(user.getNim(), "FINGERPRINT", false);
+                }
+                if (realtimePublisher != null) {
+                    realtimePublisher.publish("fingerprint-verify", new HashMap<>(response));
                 }
                 return ResponseEntity.ok(response);
             }
@@ -1001,11 +1019,25 @@ public class ServerMonitorController {
             response.put("attendanceAction", attendanceAction);
             response.put("attendanceMessage", attendanceMessage);
             response.put("attendance", attendancePayload);
+
+            if (realtimePublisher != null) {
+                Map<String, Object> event = new HashMap<>();
+                event.put("status", "success");
+                event.put("accessGranted", true);
+                event.put("fingerprintId", fpId);
+                event.put("confidence", confidence);
+                event.put("user", buildUserMap(user));
+                event.put("attendanceAction", attendanceAction);
+                realtimePublisher.publish("fingerprint-verify", event);
+            }
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             response.put("status", "error");
             response.put("message", "Error: " + e.getMessage());
             response.put("accessGranted", false);
+            if (realtimePublisher != null) {
+                realtimePublisher.publish("fingerprint-verify", new HashMap<>(response));
+            }
             return ResponseEntity.badRequest().body(response);
         }
     }
