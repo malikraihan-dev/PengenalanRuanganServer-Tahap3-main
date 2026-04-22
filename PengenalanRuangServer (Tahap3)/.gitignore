@@ -37,3 +37,6 @@ bin/
 
 ## properties file
 *.properties
+
+## logs
+*.log
